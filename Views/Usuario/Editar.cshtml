@@ -1,0 +1,156 @@
+@model _net_integrador.Models.Usuario
+
+@{
+    ViewBag.Title = "Editar Usuario";
+}
+
+<div class="container mt-4">
+    <a asp-action="Index" asp-controller="Usuario" class="btn btn-secondary">Volver</a>
+
+    <h2>Editar Usuario</h2>
+
+    <form asp-action="@ViewBag.Accion" asp-controller="Usuario" method="post">
+        @Html.HiddenFor(m => m.id)
+        @Html.HiddenFor(m => m.estado)
+        @Html.HiddenFor(m => m.avatar, new { @id = "avatarUrl" })
+
+        <div class="form-group">
+            @Html.LabelFor(m => m.nombre)
+            @Html.TextBoxFor(m => m.nombre, new { @class = "form-control", @id = "nombreInput" })
+            @Html.ValidationMessageFor(m => m.nombre, "", new { @class = "text-danger" })
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(m => m.apellido)
+            @Html.TextBoxFor(m => m.apellido, new { @class = "form-control", @id = "apellidoInput" })
+            @Html.ValidationMessageFor(m => m.apellido, "", new { @class = "text-danger" })
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(m => m.dni)
+            @Html.TextBoxFor(m => m.dni, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.dni, "", new { @class = "text-danger" })
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(m => m.email)
+            @Html.TextBoxFor(m => m.email, new { @class = "form-control" })
+            @Html.ValidationMessageFor(m => m.email, "", new { @class = "text-danger" })
+        </div>
+        <div class="form-group">
+            @Html.LabelFor(m => m.password)
+            @Html.TextBoxFor(m => m.password, new { @class = "form-control", type = "password" })
+            @Html.ValidationMessageFor(m => m.password, "", new { @class = "text-danger" })
+        </div>
+
+        @if (User.IsInRole("Admin"))
+        {
+            if (Model.rol == "Admin")
+            {
+                <div class="form-group">
+                    @Html.LabelFor(m => m.rol)
+                    <input type="text" value="Admin" class="form-control" readonly />
+                    @Html.HiddenFor(m => m.rol)
+                </div>
+            }
+            else
+            {
+                <div class="form-group">
+                    @Html.LabelFor(m => m.rol)
+                    @Html.DropDownListFor(m => m.rol,
+                        new SelectList(new[] {
+                            new { Value = "Empleado", Text = "Empleado" },
+                            new { Value = "Admin", Text = "Admin" }
+                        }, "Value", "Text", Model.rol),
+                        new { @class = "form-control" })
+                    @Html.ValidationMessageFor(m => m.rol, "", new { @class = "text-danger" })
+                </div>
+            }
+        }
+
+        <h4>Personalizar Avatar</h4>
+        <div class="form-group">
+            <label for="bgColor">Color de Fondo</label>
+            <input type="color" id="bgColor" class="form-control form-control-color" value="#343a40" />
+        </div>
+        <div class="form-group">
+            <label for="textColor">Color del Texto</label>
+            <input type="color" id="textColor" class="form-control form-control-color" value="#ffffff" />
+        </div>
+        <div class="form-group form-check">
+            <input type="checkbox" id="rounded" class="form-check-input" checked />
+            <label class="form-check-label" for="rounded">Avatar Redondo</label>
+        </div>
+        
+        <div class="form-group form-check mt-3">
+            <input type="checkbox" id="eliminarAvatarCheckbox" class="form-check-input" />
+            <label class="form-check-label" for="eliminarAvatarCheckbox">Eliminar Avatar</label>
+        </div>
+
+        <div class="mt-4">
+            <h4>Vista previa del Avatar</h4>
+            <img id="avatarPreview" src="@Model.avatar" alt="Vista previa del avatar" class="img-thumbnail" />
+        </div>
+
+        <button type="submit" class="btn btn-primary mt-3">Guardar</button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        const nombreInput = document.getElementById('nombreInput');
+        const apellidoInput = document.getElementById('apellidoInput');
+        const bgColorInput = document.getElementById('bgColor');
+        const textColorInput = document.getElementById('textColor');
+        const roundedCheckbox = document.getElementById('rounded');
+        const eliminarAvatarCheckbox = document.getElementById('eliminarAvatarCheckbox');
+        const avatarPreview = document.getElementById('avatarPreview');
+        const avatarUrlInput = document.getElementById('avatarUrl');
+
+        const DEFAULT_AVATAR_URL = "https://img.icons8.com/ios-glyphs/30/user--v1.png";
+
+        function parseAvatarUrl(url) {
+            const params = new URLSearchParams(url.split('?')[1]);
+            return {
+                bgColor: `#${params.get('background') || '343a40'}`,
+                textColor: `#${params.get('color') || 'fff'}`,
+                isRounded: params.get('rounded') === 'true'
+            };
+        }
+
+        function generarAvatarUrl() {
+            if (eliminarAvatarCheckbox.checked) {
+                avatarPreview.src = DEFAULT_AVATAR_URL;
+                avatarUrlInput.value = DEFAULT_AVATAR_URL;
+                return;
+            }
+
+            const nombre = nombreInput.value;
+            const apellido = apellidoInput.value;
+            const bgColor = bgColorInput.value.substring(1);
+            const textColor = textColorInput.value.substring(1);
+            const isRounded = roundedCheckbox.checked;
+
+            let nombreCompleto = `${nombre} ${apellido}`.trim();
+
+            if (nombreCompleto) {
+                const url = `https://ui-avatars.com/api/?name=${encodeURIComponent(nombreCompleto)}&background=${bgColor}&color=${textColor}&rounded=${isRounded}&size=128`;
+                avatarPreview.src = url;
+                avatarUrlInput.value = url;
+            } else {
+                avatarPreview.src = `@Model.avatar`;
+                avatarUrlInput.value = `@Model.avatar`;
+            }
+        }
+
+        nombreInput.addEventListener('input', generarAvatarUrl);
+        apellidoInput.addEventListener('input', generarAvatarUrl);
+        bgColorInput.addEventListener('input', generarAvatarUrl);
+        textColorInput.addEventListener('input', generarAvatarUrl);
+        roundedCheckbox.addEventListener('change', generarAvatarUrl);
+        eliminarAvatarCheckbox.addEventListener('change', generarAvatarUrl);
+        if (avatarPreview.src && avatarPreview.src.includes('ui-avatars.com')) {
+            const { bgColor, textColor, isRounded } = parseAvatarUrl(avatarPreview.src);
+            bgColorInput.value = bgColor;
+            textColorInput.value = textColor;
+            roundedCheckbox.checked = isRounded;
+        }
+    </script>
+}

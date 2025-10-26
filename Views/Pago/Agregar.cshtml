@@ -1,0 +1,22 @@
+@* @model _net_integrador.Models.Pago
+
+@{
+    ViewData["Title"] = "Nuevo Pago";
+    var contratoId = ViewBag.ContratoId;
+}
+
+<h2>Agregar Pago</h2>
+
+<form asp-action="Agregar" method="post">
+    @Html.HiddenFor(m => m.id_contrato, new { @value = contratoId })
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.fecha_pago)
+        @Html.TextBoxFor(m => m.fecha_pago, new { @class = "form-control", type = "date" })
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.importe)
+        @Html.TextBoxFor(m => m.importe, new { @class = "form-control" })
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+</form> *@

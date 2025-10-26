@@ -1,0 +1,234 @@
+@model _net_integrador.Models.Contrato
+
+@{
+    ViewData["Title"] = "Nuevo Contrato";
+}
+
+<div class="container mt-4">
+    <a href="@Url.Action("Index", "Contrato")" class="btn btn-secondary">Volver</a>
+
+    <h2>Nuevo Contrato</h2>
+
+    <form asp-action="Agregar" method="post" class="mt-4">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+
+        <div class="form-group mb-3 position-relative">
+            <label for="buscarDni">Buscar Inquilino por DNI</label>
+            <input type="text" id="buscarDni" class="form-control" placeholder="Ingrese DNI" autocomplete="off" />
+            <small id="inquilinoPreview" class="form-text text-muted"></small>
+
+            <div id="resultadosDni" class="list-group" 
+                 style="position:absolute; z-index:1000; width:100%; max-height:220px; overflow:auto;"></div>
+        </div>
+
+        <div class="form-group mb-3">
+            <label asp-for="id_inquilino" class="control-label">Seleccione el inquilino</label>
+            <select asp-for="id_inquilino" asp-items="@ViewBag.Inquilinos" class="form-control">
+                <option value="">-- Seleccione un inquilino --</option>
+            </select>
+            <span asp-validation-for="id_inquilino" class="text-danger"></span>
+        </div>
+
+        <div class="form-group mb-3">
+            @Html.LabelFor(m => m.fecha_inicio, "Ingrese la fecha de inicio del contrato")
+            @Html.TextBoxFor(m => m.fecha_inicio, new {
+                @class = "form-control",
+                type = "date",
+                min = DateTime.Now.ToString("yyyy-MM-dd"),
+                id = "fechaInicio"
+            })
+            @Html.ValidationMessageFor(m => m.fecha_inicio, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group mb-3">
+            @Html.LabelFor(m => m.DuracionEnMeses, "Ingrese la cantidad de meses de duración del contrato")
+            @Html.TextBoxFor(m => m.DuracionEnMeses, new {
+                @class = "form-control",
+                type = "number",
+                min = "1",
+                id = "duracionMeses"
+            })
+            @Html.ValidationMessageFor(m => m.DuracionEnMeses, "", new { @class = "text-danger" })
+            @Html.HiddenFor(m => m.fecha_fin)
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="control-label">Fecha Final Calculada</label>
+            <input type="text" id="fechaFinDisplay" class="form-control" readonly value="Pendiente..." />
+        </div>
+
+        <button type="submit" name="actionType" value="BuscarInmuebles" class="btn btn-info mt-2">
+            Buscar inmuebles disponibles
+        </button>
+
+        <hr />
+        @if (ViewBag.InmueblesDisponibles != null &&
+             ((List<_net_integrador.Models.Inmueble>)ViewBag.InmueblesDisponibles).Any())
+        {
+            var inmuebles = (List<_net_integrador.Models.Inmueble>)ViewBag.InmueblesDisponibles;
+            <h4>Seleccione Inmueble</h4>
+            <div class="form-group">
+                <select asp-for="id_inmueble" class="form-control" id="selectInmueble">
+                    <option value="">-- Seleccione Inmueble --</option>
+                    @foreach (var inmueble in inmuebles)
+                    {
+                        <option value="@inmueble.id" data-precio="@inmueble.precio">
+                            Dirección: @inmueble.direccion - Ambientes: @inmueble.ambientes
+                        </option>
+                    }
+                </select>
+                <span asp-validation-for="id_inmueble" class="text-danger"></span>
+            </div>
+
+            <div class="form-group mt-2">
+                <label for="monto_mensual">Monto Mensual</label>
+                <input asp-for="monto_mensual" id="montoMensual" class="form-control" readonly />
+                <span asp-validation-for="monto_mensual" class="text-danger"></span>
+            </div>
+
+            <button type="submit" name="actionType" value="CrearContrato" class="btn btn-success mt-2">
+                Crear Contrato
+            </button>
+        }
+        else if (ViewBag.InmueblesDisponibles != null)
+        {
+            <div class="alert alert-warning mt-2">
+                No hay inmuebles disponibles para las fechas seleccionadas.
+            </div>
+        }
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            var $fechaInicio = $('#fechaInicio');
+            var $duracionMeses = $('#duracionMeses');
+            var $fechaFinHidden = $('#fecha_fin');
+            var $fechaFinDisplay = $('#fechaFinDisplay');
+            var $selectInmueble = $('#selectInmueble');
+            var $montoMensual = $('#montoMensual');
+
+            
+            var $buscarDni = $('#buscarDni');
+            var $resultados = $('#resultadosDni');
+            var $preview = $('#inquilinoPreview');
+            var $selectInquilino = $('#id_inquilino');
+
+            function debounce(fn, delay) {
+                var t; 
+                return function () { 
+                    var ctx = this, args = arguments; 
+                    clearTimeout(t); 
+                    t = setTimeout(function(){ fn.apply(ctx, args); }, delay); 
+                };
+            }
+
+            function renderResultados(items) {
+                $resultados.empty();
+                if (!items || items.length === 0) {
+                    $resultados.append('<div class="list-group-item text-danger">No encontrado</div>');
+                    return;
+                }
+                items.forEach(function (it) {
+                    var html = `
+                        <a href="#" class="list-group-item list-group-item-action" data-id="${it.id}" data-dni="${it.dni}" data-nombre="${it.nombreCompleto}">
+                            ${it.nombreCompleto} &nbsp;<span class="badge bg-secondary">DNI: ${it.dni}</span>
+                        </a>`;
+                    $resultados.append(html);
+                });
+
+                $resultados.find('a').on('click', function (e) {
+                    e.preventDefault();
+                    var id = $(this).data('id');
+                    var dni = $(this).data('dni');
+                    var nombre = $(this).data('nombre');
+
+                    $selectInquilino.val(id);
+                    $preview.text("✅ Seleccionado: " + nombre + " (DNI: " + dni + ")");
+                    $buscarDni.val(dni);
+
+                    $resultados.empty();
+                });
+            }
+
+            var buscarDniLive = debounce(function () {
+                var term = $buscarDni.val().trim();
+                $preview.text('');
+                $resultados.empty();
+
+                if (term.length < 3) {
+                    
+                    return;
+                }
+                $.get('/Contrato/BuscarInquilinoPorDni', { dni: term })
+                    .done(function (data) {
+                        renderResultados(data);
+
+                        if (Array.isArray(data) && data.length === 1 && data[0].dni === term) {
+                            $selectInquilino.val(data[0].id);
+                            $preview.text("✅ Seleccionado: " + data[0].nombreCompleto + " (DNI: " + data[0].dni + ")");
+                            $resultados.empty();
+                        }
+                    })
+                    .fail(function () {
+                        $resultados.html('<div class="list-group-item text-danger">Error buscando DNI</div>');
+                    });
+            }, 250);
+
+            $buscarDni.on('keyup', buscarDniLive);
+
+            $(document).on('click', function (e) {
+                if (!$(e.target).closest('#resultadosDni, #buscarDni').length) {
+                    $resultados.empty();
+                }
+            });
+
+            function calcularFechaFin() {
+                var inicioStr = $fechaInicio.val();
+
+                var mesesStr = $duracionMeses.val();
+                var meses = parseInt(mesesStr);
+
+
+                if (inicioStr.length === 0 || isNaN(meses) || meses <= 0) {
+                    $fechaFinDisplay.val("Ingrese fecha de inicio");
+                    $fechaFinHidden.val('');
+                    return;
+                }
+
+                var fecha = new Date(inicioStr + 'T00:00:00');
+
+                if (isNaN(fecha.getTime())) {
+                    $fechaFinDisplay.val("Fecha de inicio inválida.");
+                    $fechaFinHidden.val('');
+                    return;
+                }
+                fecha.setMonth(fecha.getMonth() + meses);
+                var dia = String(fecha.getDate()).padStart(2, '0');
+                var mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                var anio = fecha.getFullYear();
+
+                var fechaFinalDisplay = `${dia}/${mes}/${anio}`;
+                var fechaFinalHidden = `${anio}-${mes}-${dia}`;
+                $fechaFinDisplay.val(fechaFinalDisplay);
+                $fechaFinHidden.val(fechaFinalHidden);
+            }
+
+            function actualizarMontoMensual() {
+                var $selectedOption = $selectInmueble.find('option:selected');
+                var precio = $selectedOption.data('precio');
+                if (precio > 0) {
+                    $montoMensual.val(precio);
+                } else {
+                    $montoMensual.val('');
+                }
+            }
+
+            $selectInmueble && $selectInmueble.on('change', actualizarMontoMensual);
+            $fechaInicio.on('change', calcularFechaFin);
+            $duracionMeses.on('input', calcularFechaFin);
+            calcularFechaFin();
+        });
+    </script>
+}

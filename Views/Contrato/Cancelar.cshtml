@@ -1,0 +1,190 @@
+@model _net_integrador.Models.Contrato
+@{
+    ViewData["Title"] = "Cancelar Contrato";
+
+    bool contratoCanceladoYGuardado = Model.estado == 0 && Model.fecha_terminacion_anticipada.HasValue && Model.multa.HasValue;
+    
+    string multaMostrada = Model.multa.HasValue 
+        ? Model.multa.Value.ToString("C", new System.Globalization.CultureInfo("es-AR")) 
+        : "...";
+}
+
+<div class="card">
+    <div class="card-header">
+        <h4>Cancelar Contrato</h4>
+    </div>
+    <div class="card-body">
+        
+        <div id="messagesContainer">
+            @if (TempData["Exito"] != null)
+            {
+                <div class="alert alert-success">@TempData["Exito"]</div>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger">@TempData["Error"]</div>
+            }
+            @if (TempData["fechaTerminacionError"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["fechaTerminacionError"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            }
+        </div>
+
+        <p>Fecha de inicio del contrato: <strong>@(Model.fecha_inicio?.ToString("dd/MM/yyyy") ?? "No disponible")</strong></p>
+        <p>Fecha de finalización original del contrato: <strong>@(Model.fecha_fin?.ToString("dd/MM/yyyy") ?? "No disponible")</strong></p>
+
+        @if (contratoCanceladoYGuardado)
+        {
+            <div class="alert alert-info" id="multaGuardadaDisplay">
+                <strong>Multa Registrada: @multaMostrada</strong>
+            </div>
+        }
+
+        <div id="calculoResumen" class="alert alert-warning d-none">
+            <p><strong>Pagos Vencidos y Pendientes:</strong> <span id="displayMesesAdeudados">0</span> meses por un total de <span id="displayTotalAdeudado">$0,00</span>.</p>
+            <p><strong>Multa por Cancelación:</strong> <span id="displayMultaCalculada">...</span></p>
+        </div>
+
+        <form id="formCancelacion" asp-action="Cancelar" method="post">
+            <input type="hidden" name="idContrato" value="@Model.id" />
+            
+            <p>Inmueble: <strong>@Model.Inmueble?.direccion</strong></p>
+            <p>Inquilino: 
+                <strong>
+                    <br>Nombre: @Model.Inquilino?.NombreCompleto 
+                    <br>DNI: @Model.Inquilino?.dni
+                    <br>Correo: @Model.Inquilino?.email
+                </strong>
+            </p>
+
+            <div class="form-group">
+                <label for="fechaTerminacion">Fecha Efectiva de Terminación Anticipada</label>
+                <input type="date" 
+                       id="fechaTerminacion" 
+                       name="fechaTerminacion" 
+                       class="form-control" 
+                       required 
+                       value="@(Model.fecha_terminacion_anticipada?.ToString("yyyy-MM-dd"))" 
+                       @(contratoCanceladoYGuardado ? "disabled" : "") />
+                <div id="fechaTerminacionError" class="text-danger mt-1"></div>
+            </div>
+            
+            <div class="form-group mt-3">
+                <label for="multaCalculada">Monto de la Multa Calculada</label>
+                <input type="text" 
+                       id="multaCalculada" 
+                       class="form-control" 
+                       readonly 
+                       value="@(contratoCanceladoYGuardado ? multaMostrada : "...")" />
+
+                <input type="hidden" id="multaValor" name="multaValor" value="@(Model.multa ?? 0)" />
+            </div>
+            
+            <hr>
+
+            <div id="opcionesGuardar" style="display: @(!contratoCanceladoYGuardado ? "block" : "none");">
+                <button type="button" id="btnConfirmar" class="btn btn-primary" disabled>Confirmar Cancelación</button>
+                <a href="@Url.Action("Index")" class="btn btn-secondary">Volver</a>
+            </div>
+
+            <div id="opcionesPago" style="display: @(contratoCanceladoYGuardado ? "block" : "none");">
+                <h5 class="mt-4">Opciones de Pago:</h5>
+
+              <a id="linkPagar" 
+                asp-controller="Pago" 
+                asp-action="Index" 
+                asp-route-contratoId="@Model.id" 
+                class="btn btn-sm btn-success">
+                    Pagar Multa Ahora
+              </a>
+
+                <a href="@Url.Action("Index")" class="btn btn-secondary">
+                    Volver (Pagar después)
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            
+            $('#fechaTerminacion').on('change', function () {
+                var fecha = $(this).val();
+                var idContrato = @Model.id;
+                $('#fechaTerminacionError').text('');
+                $('#calculoResumen').addClass('d-none'); 
+                $('#btnConfirmar').prop('disabled', true);
+
+                if (fecha) {
+                    $.ajax({
+                        url: '@Url.Action("CalcularMultaAjax", "Contrato")',
+                        type: 'GET',
+                        data: { idContrato: idContrato, fechaTerminacion: fecha },
+                        success: function (response) {
+                            console.log("Respuesta AJAX completa:", response); 
+                            if (response.success) {
+                                $('#multaCalculada').val(response.multaTexto);
+                                $('#multaValor').val(response.multaValor);
+                                $('#displayMesesAdeudados').text(response.mesesAdeudados);
+                                $('#displayTotalAdeudado').text(response.totalAdeudadoTexto);
+                                $('#displayMultaCalculada').text(response.multaTexto);
+                                $('#calculoResumen').removeClass('d-none');
+                                $('#btnConfirmar').prop('disabled', false); 
+                            } else {
+                                $('#fechaTerminacionError').text(response.fechaTerminacionError || response.error || "Error desconocido.");
+                                $('#multaCalculada').val('ERROR'); 
+                                $('#btnConfirmar').prop('disabled', true);
+                            }
+                        }
+                    });
+                } else {
+                    $('#multaCalculada').val('...');
+                    $('#multaValor').val(0);
+                    $('#btnConfirmar').prop('disabled', true);
+                }
+            });
+            
+            $('#btnConfirmar').on('click', function (e) {
+                e.preventDefault(); 
+
+                if ($(this).prop('disabled')) return;
+                
+                var $btn = $(this).prop('disabled', true).text('Guardando...');
+                
+                $.ajax({
+                    url: '@Url.Action("Cancelar", "Contrato")', 
+                    type: 'POST',
+                    data: $('#formCancelacion').serialize(),
+                    success: function (response) {
+                        if (response.success) {
+                            var multaTexto = response.multa; 
+                            var multaValor = response.multaValor; 
+
+                            $('#messagesContainer').prepend('<div class="alert alert-success">Cancelación Guardada. Multa: ' + multaTexto + '.</div>');
+                            $('#fechaTerminacion').prop('disabled', true);
+                            $('#opcionesGuardar').hide(); 
+                            $('#opcionesPago').show();
+
+                            var pagarUrl = '@Url.Action("RegistrarPagoMulta", "Contrato", new { idContrato = Model.id, monto = "MULTA_VALOR_PLACEHOLDER" })';
+                            pagarUrl = pagarUrl.replace("MULTA_VALOR_PLACEHOLDER", multaValor);
+                            $('#linkPagar').attr('href', pagarUrl);
+                        } else {
+                            $('#messagesContainer').prepend('<div class="alert alert-danger">Error: ' + (response.error || "No se pudo cancelar.") + '</div>');
+                            $btn.prop('disabled', false).text('Confirmar Cancelación');
+                        }
+                    },
+                    error: function () {
+                        alert('Error de comunicación con el servidor.');
+                        $btn.prop('disabled', false).text('Confirmar Cancelación');
+                    }
+                });
+            });
+        });
+    </script>
+}

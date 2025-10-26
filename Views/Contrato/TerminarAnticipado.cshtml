@@ -1,0 +1,23 @@
+@model _net_integrador.Models.Contrato
+
+@{
+    ViewData["Title"] = "Terminar Contrato Anticipadamente";
+}
+
+<h2>Terminar Contrato Anticipadamente</h2>
+
+<div class="alert alert-warning" role="alert">
+    Ten en cuenta que la terminación anticipada puede generar una multa.
+</div>
+
+<form asp-action="TerminarAnticipado" method="post">
+    @Html.HiddenFor(m => m.id)
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.fecha_fin)
+        @Html.TextBoxFor(m => m.fecha_fin, new { @class = "form-control", type = "date" })
+        <small class="form-text text-muted">Ingresa la nueva fecha de finalización.</small>
+    </div>
+
+    <button type="submit" class="btn btn-danger">Calcular Multa y Terminar</button>
+</form>

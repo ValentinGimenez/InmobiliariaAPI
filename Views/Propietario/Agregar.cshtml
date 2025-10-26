@@ -1,0 +1,41 @@
+@model _net_integrador.Models.Propietario
+@{
+    ViewData["Title"] = "Nuevo propietario";
+}
+
+<h2>Agregar Propietario</h2>
+
+<form asp-action="Agregar" method="post">
+    <div class="form-group">
+        @Html.LabelFor(m => m.nombre, "Nombre")
+        @Html.TextBoxFor(m => m.nombre, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.nombre, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.apellido, "Apellido")
+        @Html.TextBoxFor(m => m.apellido, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.apellido, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.dni, "DNI")
+        @Html.TextBoxFor(m => m.dni, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.dni, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.email, "Email")
+        @Html.TextBoxFor(m => m.email, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.email, "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.telefono, "Teléfono")
+        @Html.TextBoxFor(m => m.telefono, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.telefono, "", new { @class = "text-danger" })
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar</button>
+    <a asp-action="Index" asp-controller="Propietario" class="btn btn-secondary">Volver</a>
+</form>

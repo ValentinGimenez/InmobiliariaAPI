@@ -1,0 +1,124 @@
+@model _net_integrador.Models.Contrato
+
+@{
+    ViewData["Title"] = "Renovar Contrato";
+}
+
+<div class="container mt-4">
+    <a href="@Url.Action("Detalles", "Contrato", new { id = Model.id })" class="btn btn-secondary">
+        Volver a Detalles del Contrato Original
+    </a>
+
+    <h2>Renovar Contrato <small class="text-muted">(ID Original: @Model.id)</small></h2>
+
+    <form asp-action="Renovar" method="post" class="mt-4">
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        
+        @Html.HiddenFor(m => m.id_inquilino)
+        @Html.HiddenFor(m => m.id_inmueble)
+        @Html.HiddenFor(m => m.monto_mensual)
+        @Html.HiddenFor(m => m.id) 
+        @Html.HiddenFor(m => m.fecha_fin)
+
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label class="control-label">Inquilino</label>
+                <input type="text" class="form-control" readonly 
+                       value="@ViewBag.InquilinoNombre" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="control-label">Inmueble</label>
+                <input type="text" class="form-control" readonly 
+                       value="@ViewBag.InmuebleDireccion" />
+            </div>
+            <div class="col-md-6 mb-3">
+                <label class="control-label">Monto Mensual</label>
+                <input type="text" class="form-control" readonly 
+                       value="@Model.monto_mensual?.ToString("C")" />
+            </div>
+        </div>
+
+        <hr/>
+        <h4>Definir Nuevo Período de Alquiler</h4>
+
+        <div class="form-group mb-3">
+            @Html.LabelFor(m => m.fecha_inicio, "Nueva Fecha de Inicio del Contrato")
+            @Html.TextBoxFor(m => m.fecha_inicio, new {
+                @class = "form-control",
+                type = "date",
+                min = Model.fecha_inicio?.ToString("yyyy-MM-dd"), 
+                id = "fechaInicio"
+            })
+            @Html.ValidationMessageFor(m => m.fecha_inicio, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group mb-3">
+            @Html.LabelFor(m => m.DuracionEnMeses, "Ingrese la nueva cantidad de meses de duración")
+            @Html.TextBoxFor(m => m.DuracionEnMeses, new {
+                @class = "form-control",
+                type = "number",
+                min = "1",
+                id = "duracionMeses"
+            })
+            @Html.ValidationMessageFor(m => m.DuracionEnMeses, "", new { @class = "text-danger" })
+        </div>
+
+        <div class="form-group mb-3">
+            <label class="control-label">Fecha Final Calculada</label>
+            <input type="text" id="fechaFinDisplay" class="form-control" readonly value="Calculando..." />
+        </div>
+
+        <button type="submit" class="btn btn-success mt-4">
+            Generar Nuevo Contrato de Renovación
+        </button>
+    </form>
+</div>
+
+@section Scripts {
+    <script>
+        $(function () {
+            var $fechaInicio = $('#fechaInicio');
+            var $duracionMeses = $('#duracionMeses');
+            var $fechaFinHidden = $('#fecha_fin');
+            var $fechaFinDisplay = $('#fechaFinDisplay');
+
+            function calcularFechaFin() {
+                var inicioStr = $fechaInicio.val();
+                var mesesStr = $duracionMeses.val();
+                var meses = parseInt(mesesStr);
+
+                if (inicioStr.length === 0 || isNaN(meses) || meses <= 0) {
+                    $fechaFinDisplay.val("Ingrese fecha de inicio y duración");
+                    $fechaFinHidden.val('');
+                    return;
+                }
+
+                var fecha = new Date(inicioStr + 'T00:00:00'); 
+
+                if (isNaN(fecha.getTime())) {
+                    $fechaFinDisplay.val("Fecha de inicio inválida.");
+                    $fechaFinHidden.val('');
+                    return;
+                }
+                
+                fecha.setMonth(fecha.getMonth() + meses);
+
+                var dia = String(fecha.getDate()).padStart(2, '0');
+                var mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                var anio = fecha.getFullYear();
+
+                var fechaFinalDisplay = `${dia}/${mes}/${anio}`;
+                var fechaFinalHidden = `${anio}-${mes}-${dia}`;
+                
+                $fechaFinDisplay.val(fechaFinalDisplay);
+                $fechaFinHidden.val(fechaFinalHidden);
+            }
+
+            $fechaInicio.on('change', calcularFechaFin);
+            $duracionMeses.on('input', calcularFechaFin);
+            
+            calcularFechaFin(); 
+        });
+    </script>
+}

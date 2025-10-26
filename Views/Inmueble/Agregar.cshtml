@@ -1,0 +1,74 @@
+@model _net_integrador.Models.Inmueble
+
+@{
+    ViewData["Title"] = "Nuevo Inmueble";
+}
+
+
+<h2>Agregar Inmueble</h2>
+
+<form asp-action="Agregar" method="post">
+    <div class="form-group">
+        @Html.LabelFor(m => m.id_propietario, "Propietario")
+        @Html.DropDownListFor(m => m.id_propietario,
+        (SelectList)ViewBag.Propietarios,
+                "Seleccione un propietario",
+                new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.id_propietario, message: "", new { @class = "text-danger" })
+    </div>
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.direccion, "Dirección")
+        @Html.TextBoxFor(m => m.direccion, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.direccion, message: "", new { @class = "text-danger" })
+
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.uso, "Uso de Inmueble")
+        <br>
+        <div class="form-check form-check-inline">
+            <label class="form-check-label" for="Comercial">Comercial</label>
+            @Html.RadioButtonFor(m => m.uso, (int)_net_integrador.Models.UsoInmueble.Comercial, new { @id = "Comercial" })
+
+        </div>
+        <div class="form-check form-check-inline">
+            <label class="form-check-label" for="Residencial">Residencial</label>
+            @Html.RadioButtonFor(m => m.uso, (int)_net_integrador.Models.UsoInmueble.Residencial, new { @id = "Residencial" })
+
+        </div>
+        @Html.ValidationMessageFor(m => m.uso, "", new { @class = "text-danger" })
+    </div>
+    <div class="form-group">
+        <label class="form-check-label" for="Tipo de Inmueble">Tipo de Inmueble</label>
+        @Html.DropDownListFor(m => m.id_tipo,
+                (SelectList)ViewBag.TiposInmueble,
+                "Seleccione el tipo de Inmueble",
+                new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.id_tipo, "", new { @class = "text-danger" })
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.ambientes, "Cantidad de ambientes")
+        @Html.TextBoxFor(m => m.ambientes, new { @class = "form-control", type = "number", min = "1", max = "20" })
+        @Html.ValidationMessageFor(m => m.ambientes, "", new { @class = "text-danger" })
+
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.eje_x, "Longitud")
+        @Html.TextBoxFor(m => m.eje_x, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.eje_x, "", new { @class = "text-danger" })
+
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.eje_y, "Latitud")
+        @Html.TextBoxFor(m => m.eje_y, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.eje_y, "", new { @class = "text-danger" })
+
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.precio, "Precio del Inmueble")
+        @Html.TextBoxFor(m => m.precio, new { @class = "form-control" })
+        @Html.ValidationMessageFor(m => m.precio, "", new { @class = "text-danger" })
+
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+</form>

@@ -1,0 +1,19 @@
+@model _net_integrador.Models.TipoInmueble
+
+@{
+    ViewBag.Title = "Editar Tipo de Inmueble";
+}
+    <a asp-action="Index" asp-controller="TipoInmueble" class="btn btn-secondary">Volver</a>
+
+<h2>Editar Tipo de Inmueble</h2>
+
+@using (Html.BeginForm("Editar", "TipoInmueble", FormMethod.Post))
+{
+    @Html.HiddenFor(m => m.id)
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.tipo)
+        @Html.TextBoxFor(m => m.tipo, new { @class = "form-control" })
+    </div>
+    <button type="submit" class="btn btn-primary">Guardar</button>
+}

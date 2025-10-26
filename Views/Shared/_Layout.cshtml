@@ -1,0 +1,153 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] ALQUINET</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/_net_integrador.styles.css" asp-append-version="true" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/v/bs5/dt-1.13.8/datatables.min.css"/>
+    <style>
+        .profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    @if (ViewData["Title"]?.ToString() != "Iniciar Sesión")
+    {
+        <header>
+            <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-3">
+                <div class="container-fluid">
+                    <a class="navbar-brand fw-bold text-primary" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="bi bi-building"></i> ALQUINET
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" 
+                            aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
+                            @if (User?.Identity?.IsAuthenticated == true)
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Propietario" asp-action="Index">
+                                        <i class="bi bi-person-badge-fill"></i> Propietarios
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Inquilino" asp-action="Index">
+                                        <i class="bi bi-person-fill-gear"></i> Inquilinos
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Inmueble" asp-action="Index">
+                                        <i class="bi bi-building-fill"></i> Inmuebles
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Contrato" asp-action="Index">
+                                        <i class="bi bi-file-earmark-text-fill"></i> Contratos
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="TipoInmueble" asp-action="Index">
+                                        <i class="bi bi-tag-fill"></i> Tipos de Inmuebles
+                                    </a>
+                                </li>
+
+                                @if (User.IsInRole("Admin"))
+                                {
+                                    <li class="nav-item">
+                                        <a class="nav-link text-dark" asp-controller="Usuario" asp-action="Index">
+                                            <i class="bi bi-people-fill"></i> Usuarios
+                                        </a>
+                                    </li>
+                                }
+                            }
+                        </ul>
+
+                        <ul class="navbar-nav">
+                            @if (User?.Identity?.IsAuthenticated == true)
+                            {
+                                <li class="nav-item dropdown">
+                                    @{
+                                        var email = User.Identity.Name;
+                                        var initials = new System.Text.RegularExpressions.Regex(@"^[^@]+").Match(email).Value;
+                                        var avatarUrl = $"https://ui-avatars.com/api/?name={initials}&background=343a40&color=fff&rounded=true&size=128";
+                                    }
+                                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" 
+                                    role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                        <img src="@avatarUrl" alt="Avatar" class="profile-avatar">
+                                    </a>
+                                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                        <li><span class="dropdown-item-text">@User.Identity.Name!</span></li>
+                                        <li><a class="dropdown-item" href="@Url.Action("EditarPerfil", "Usuario")">
+                                            <i class="bi bi-person-circle"></i> Editar mi perfil</a></li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item text-danger" asp-controller="Usuario" asp-action="Logout">
+                                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                                    </ul>
+                                </li>
+                            }
+                            else
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link text-dark" asp-controller="Usuario" asp-action="Login">
+                                        <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+        </header>
+    }
+
+    <div class="container">
+        <main role="main" class="pb-3">
+            <div class="container mt-3">
+                @if (TempData["Exito"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        @TempData["Exito"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+
+                @if (TempData["Error"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        @TempData["Error"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                }
+            </div>
+
+            @RenderBody()
+        </main>
+    </div>
+
+    @if (ViewData["Title"]?.ToString() != "Iniciar Sesión")
+    {
+        <footer class="border-top footer text-muted">
+            <div class="container">
+            </div>
+        </footer>
+    }
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script type="text/javascript" src="https://cdn.datatables.net/v/bs5/dt-1.13.8/datatables.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

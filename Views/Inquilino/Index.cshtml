@@ -1,0 +1,97 @@
+@model IEnumerable<_net_integrador.Models.Inquilino>
+@{
+    ViewData["Title"] = "Inquilinos";
+}
+@if (TempData["Exito"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Exito"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="text-center">
+    <h1 class="display-4">Lista de Inquilinos</h1>
+</div>
+
+<p>
+    <a class="btn btn-success" asp-action="Agregar">Agregar Inquilino</a>
+    <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">Volver</a>
+</p>
+
+<table class="table table-striped" id="tablaInquilinos">
+    <thead>
+        <tr>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Apellido</th>
+            <th>DNI</th>
+            <th>Email</th>
+            <th>Teléfono</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var i in Model)
+        {
+            <tr>
+                <td>@i.id</td>
+                <td>@i.nombre</td>
+                <td>@i.apellido</td>
+                <td>@i.dni</td>
+                <td>@i.email</td>
+                <td>@i.telefono</td>
+                <td> 
+                    @if(i.estado == 1)
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else if(i.estado == 0)
+                    {
+                        <span class="badge bg-danger">Inactivo</span>
+                    }
+                </td>
+                <td>
+                    @Html.ActionLink("Editar", "Editar", new { id = i.id }, new { @class = "btn btn-primary btn-sm" })
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        if (i.estado == 1)
+                        {
+                            @Html.ActionLink("Desactivar", "Eliminar", new { id = i.id },
+                                new { @class = "btn btn-danger btn-sm", onclick = "return confirm('¿Seguro que querés desactivar este inquilino?');" })
+                        }
+                        else if (i.estado == 0)
+                        {
+                            @Html.ActionLink("Activar", "Activar", new { id = i.id },
+                                new { @class = "btn btn-success btn-sm", onclick = "return confirm('¿Seguro que querés activar este inquilino?');" })
+                        }
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            $('#tablaInquilinos').DataTable({
+                "language": {
+                    "url": "//cdn.datatables.net/plug-ins/1.13.8/i18n/es-ES.json"
+                },
+                "columnDefs": [
+                    { "orderable": false, "targets": 7 }
+                ]
+            });
+        });
+    </script>
+}

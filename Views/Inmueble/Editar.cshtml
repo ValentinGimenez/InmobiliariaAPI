@@ -1,0 +1,65 @@
+@model _net_integrador.Models.Inmueble
+
+@{
+    ViewBag.Title = "Editar Inmueble";
+}
+    <a asp-action="Index" asp-controller="Inmueble" class="btn btn-secondary">Volver</a>
+
+<h2>Editar Inmueble</h2>
+
+@using (Html.BeginForm("Editar", "Inmueble", FormMethod.Post))
+{
+    @Html.HiddenFor(m => m.id)
+    @Html.HiddenFor(m => m.estado)
+    @Html.HiddenFor(m=> m.id_propietario)
+
+    <div class="form-group">
+        @Html.LabelFor(m => m.direccion, "Dirección")
+        @Html.TextBoxFor(m => m.direccion, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.uso, "Uso del Inmueble")
+        <br>
+         <div class="form-check form-check-inline">
+             <label class="form-check-label" for="Comercial">Comercial</label>
+             @Html.RadioButtonFor(m => m.uso, "Comercial", new { @class = "form-check-input", id = "Comercial" })
+         </div>
+         <div class="form-check form-check-inline">
+             <label class="form-check-label" for="Residencial">Residencial</label>
+             @Html.RadioButtonFor(m => m.uso, "Residencial", new { @class = "form-check-input", id = "Residencial" })
+         </div>
+
+         @Html.ValidationMessageFor(m => m.uso, "", new { @class = "text-danger" })
+
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.id_tipo, "Tipo de Inmueble")
+        @Html.TextBoxFor(m => m.id_tipo, new { @class = "form-control" })
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.ambientes,"Cantidad de ambientes")
+        @Html.TextBoxFor(m => m.ambientes, new { @class = "form-control",type = "number", min = "1", max = "20"  })
+         @Html.ValidationMessageFor(m => m.ambientes, "", new { @class = "text-danger" })
+
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.eje_x, "Longitud")
+        @Html.TextBoxFor(m => m.eje_x, new { @class = "form-control" })
+         @Html.ValidationMessageFor(m => m.eje_x, "", new { @class = "text-danger" })
+
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.eje_y, "Latitud")
+        @Html.TextBoxFor(m => m.eje_y, new { @class = "form-control" })
+         @Html.ValidationMessageFor(m => m.eje_y, "", new { @class = "text-danger" })
+
+    </div>
+    <div class="form-group">
+        @Html.LabelFor(m => m.precio, "Precio")
+        @Html.TextBoxFor(m => m.precio, new { @class = "form-control" })
+         @Html.ValidationMessageFor(m => m.precio, "", new { @class = "text-danger" })
+
+    </div>
+    
+    <button type="submit" class="btn btn-primary">Guardar</button>
+}

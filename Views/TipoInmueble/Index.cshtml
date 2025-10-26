@@ -1,0 +1,66 @@
+@model IEnumerable<_net_integrador.Models.TipoInmueble>
+
+@{
+    ViewData["Title"] = "Tipos de Inmueble";
+}
+
+<div class="text-center">
+    <h1 class="display-4">Gestión de Tipos de Inmuebles</h1>
+</div>
+
+<p>
+    <a class="btn btn-success" asp-action="Agregar">Agregar Tipo</a>
+    <a asp-action="Index" asp-controller="Home" class="btn btn-secondary">Volver</a>
+</p>
+
+<table class="table table-striped table-bordered">
+    <thead class="table-dark">
+        <tr>
+            <th>Código</th>
+            <th>Tipo</th>
+            <th>Estado</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var t in Model)
+        {
+            <tr class="@(t.estado == 0 ? "table-danger" : "")">
+                <td>@t.id</td>
+                <td>@t.tipo</td>
+                <td>
+                    @if (t.estado == 1)
+                    {
+                        <span class="badge bg-success">Activo</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-danger">Inactivo</span>
+                    }
+                </td>
+                <td>
+                    @Html.ActionLink("Editar", "Editar", new { id = t.id }, new { @class = "btn btn-primary btn-sm" })
+
+                    @if (User.IsInRole("Admin"))
+                    {
+                        if (t.estado == 1)
+                        {
+                            <a asp-action="Desactivar" asp-route-id="@t.id" 
+                               class="btn btn-warning btn-sm"
+                               onclick="return confirm('¿Seguro que querés desactivar este tipo de inmueble?');">
+                                Desactivar
+                            </a>
+                        }
+                        else
+                        {
+                            <a asp-action="Activar" asp-route-id="@t.id" 
+                               class="btn btn-success btn-sm">
+                                Activar
+                            </a>
+                        }
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
