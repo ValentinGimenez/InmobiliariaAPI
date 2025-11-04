@@ -1,58 +1,41 @@
-using System.ComponentModel.DataAnnotations.Schema;
-using System.ComponentModel.DataAnnotations;
-
-
 namespace _net_integrador.Models
 {
-    [Table("inmueble")]
     public class Inmueble
     {
         public int id { get; set; }
-        public Propietario? propietario { get; set; }
-        [Required(ErrorMessage = "Este campo es obligatorio")]
-        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un propietario")]
-
-        public int? id_propietario { get; set; }
-        [Required(ErrorMessage = "Este campo es obligatorio")]
-
+        public int id_propietario { get; set; }
+        public TipoInmueble tipo { get; set; } 
+        public UsoInmueble uso { get; set; } 
+        public Estado estado { get; set; } 
         public string direccion { get; set; } = string.Empty;
-
-
-        [Required(ErrorMessage = "Este campo es obligatorio")]
-
-        public UsoInmueble? uso { get; set; }
-        public TipoInmueble? tipoInmueble { get; set; }
-        [Required(ErrorMessage = "Este campo es obligatorio")]
-        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un tipo de inmueble")]
-        public int? id_tipo { get; set; }
-
-
-        [Required(ErrorMessage = "La cantidad de ambientes es obligatoria")]
-        [Range(1, 20, ErrorMessage = "La cantidad de ambientes debe ser entre 1 y 20")]
-
         public int? ambientes { get; set; }
-        [Required(ErrorMessage = "Este campo es obligatorio")]
-
-        public string eje_x { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Este campo es obligatorio")]
-
-
-        public string eje_y { get; set; } = string.Empty;
-        [Required(ErrorMessage = "Este campo es obligatorio")]
+        public double? eje_x { get; set; }
+        public double? eje_y { get; set; }
         public decimal? precio { get; set; }
-        public Estado estado { get; set; }
-
+        public string? imagen { get; set; }
+        public double? superficie { get; set; }
 
     }
+
+    public enum TipoInmueble
+    {
+        Casa = 1,
+        Departamento = 2,
+        Oficina = 3,
+        Local = 4
+
+    }
+
     public enum UsoInmueble
     {
         Comercial = 1,
         Residencial = 2
     }
+
     public enum Estado
     {
-        Disponible= 1,
-        Suspendido= 2,
-        Alquilado= 3
+        Disponible = 1,
+        Suspendido = 2,
+        Alquilado = 3
     }
 }

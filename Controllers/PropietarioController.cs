@@ -1,141 +1,125 @@
-using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using _net_integrador.Models;
 using _net_integrador.Repositorios;
-using Microsoft.Extensions.Logging;
-using Microsoft.AspNetCore.Authorization;
 
-namespace _net_integrador.Controllers
+namespace _net_integrador.Controllers.Api
 {
-    [Authorize]
-    public class PropietarioController : Controller
+    [ApiController]
+    [Route("api/[controller]")] 
+    public class PropietariosController : ControllerBase
     {
-        private readonly ILogger<PropietarioController> _logger;
-        private readonly IRepositorioPropietario _repositorio;
+        private readonly IRepositorioPropietario _repo;
+        private readonly IConfiguration _cfg;
 
-        public PropietarioController(ILogger<PropietarioController> logger, IRepositorioPropietario repositorio)
+        public PropietariosController(IRepositorioPropietario repo, IConfiguration cfg)
         {
-            _logger = logger;
-            _repositorio = repositorio;
+            _repo = repo;
+            _cfg = cfg;
         }
 
-        public IActionResult Index()
+        [HttpPost("login")]
+        [AllowAnonymous]
+        [Consumes("application/x-www-form-urlencoded")]
+        public IActionResult Login([FromForm] string Usuario, [FromForm] string Clave)
         {
-            var listaPropietarios = _repositorio.ObtenerPropietarios();
-            return View(listaPropietarios);
+            var p = _repo.ObtenerPorEmail(Usuario);
+            if (p == null || string.IsNullOrEmpty(p.clave) || !BCrypt.Net.BCrypt.Verify(Clave, p.clave))
+                return Unauthorized("Correo electrónico o contraseña incorrectos.");
+
+            var token = GenerarToken(p);
+            return Content(token, "text/plain", Encoding.UTF8);
         }
 
         [HttpGet]
-        public IActionResult Agregar()
+        [Authorize]
+        public ActionResult<Propietario> Get()
         {
-            return View();
-        }
-
-        [HttpGet]
-        public IActionResult Editar(int id)
-        {
-            var propietarioSeleccionado = _repositorio.ObtenerPropietarioId(id);
-            if (propietarioSeleccionado == null)
-            {
+            var id = GetUserIdOrThrow();
+            var p = _repo.ObtenerPropietarioId(id);
+            if (p == null)
                 return NotFound();
-            }
-            return View(propietarioSeleccionado);
+            p.clave = null; // no exponer hash
+            return Ok(p);
         }
 
-        public IActionResult Eliminar(int id)
+        [HttpPut("actualizar")]
+        [Authorize]
+        public ActionResult<Propietario> Actualizar([FromBody] Propietario dto)
         {
-            bool eliminacionExitosa = _repositorio.EliminarPropietario(id);
+            var id = GetUserIdOrThrow();
+            var p = _repo.ObtenerPropietarioId(id);
+            if (p == null)
+                return NotFound();
 
-            if (eliminacionExitosa)
-            {
-                TempData["Exito"] = "Inquilino eliminado correctamente";
-            }
-            else
-            {
-                TempData["Error"] = "No se puede eliminar el inquilino porque tiene un contrato activo";
-            }
-            return RedirectToAction("Index");
+            p.nombre = string.IsNullOrWhiteSpace(dto.nombre) ? p.nombre : dto.nombre;
+            p.apellido = string.IsNullOrWhiteSpace(dto.apellido) ? p.apellido : dto.apellido;
+            p.dni = string.IsNullOrWhiteSpace(dto.dni) ? p.dni : dto.dni;
+            p.email = string.IsNullOrWhiteSpace(dto.email) ? p.email : dto.email;
+            p.telefono = string.IsNullOrWhiteSpace(dto.telefono) ? p.telefono : dto.telefono;
+
+            var actualizado = _repo.ActualizarPropietario(p);
+            actualizado.clave = null;
+            return Ok(actualizado);
         }
 
-        public IActionResult Activar(int id)
+        [HttpPut("changePassword")]
+        [Authorize]
+        [Consumes("application/x-www-form-urlencoded")]
+        public IActionResult ChangePassword([FromForm] string currentPassword, [FromForm] string newPassword)
         {
-            _repositorio.ActivarPropietario(id);
-            return RedirectToAction("Index");
+            if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
+                return BadRequest("La nueva contraseña debe tener al menos 6 caracteres.");
+
+            var id = GetUserIdOrThrow();
+            var p = _repo.ObtenerPropietarioId(id);
+            if (p == null)
+                return NotFound();
+
+            if (string.IsNullOrEmpty(p.clave) || !BCrypt.Net.BCrypt.Verify(currentPassword, p.clave))
+                return Unauthorized("La contraseña actual es incorrecta.");
+
+            var ok = _repo.CambiarPassword(id, newPassword);
+            if (!ok)
+                return StatusCode(500, "No se pudo actualizar la contraseña.");
+
+            return NoContent();
         }
 
-        [HttpPost]
-        public IActionResult Editar(Propietario propietario)
-        {
-            if (!ModelState.IsValid)
-            {
-                return View(propietario);
-            }
-            else
-            {
-                try
-                {
-                    bool error = false;
-                    if (_repositorio.ExisteDni(propietario.dni, propietario.id))
-                    {
-                        ModelState.AddModelError("dni", "Este dni ya está registrado");
-                        error = true;
-                    }
-                    if (_repositorio.ExisteEmail(propietario.email, propietario.id))
-                    {
-                        ModelState.AddModelError("email", "Este email ya está registrado");
-                        error = true;
-                    }
-                    if (error)
-                    {
-                        return View(propietario);
-                    }
-                    propietario.nombre = propietario.nombre?.ToUpper() ?? "";
-                    propietario.apellido = propietario.apellido?.ToUpper() ?? "";
-                    propietario.email = propietario.email?.ToLower() ?? "";
-                    _repositorio.ActualizarPropietario(propietario);
-                    TempData["Exito"] = "Datos guardados con éxito";
 
-                    return RedirectToAction("Index");
-                }
-                catch (Exception ex)
-                {
-                    return BadRequest(ex.Message);
-                }
-            }
+        private int GetUserIdOrThrow()
+        {
+            var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (!int.TryParse(idStr, out var id) || id <= 0)
+                throw new UnauthorizedAccessException("Token inválido.");
+            return id;
         }
 
-        [HttpPost]
-        public IActionResult Agregar(Propietario propietarioNuevo)
+        private string GenerarToken(Propietario p)
         {
-            if (ModelState.IsValid)
+            var jwt = _cfg.GetSection("Jwt");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt["Key"]!));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new List<Claim>
             {
-                bool error = false;
-                if (_repositorio.ExisteDni(propietarioNuevo.dni))
-                {
-                    ModelState.AddModelError("dni", "Este DNI ya está registrado");
-                    error = true;
-                }
+                new Claim(ClaimTypes.NameIdentifier, p.id.ToString()),
+                new Claim(ClaimTypes.Name, p.email ?? string.Empty),
+                new Claim(ClaimTypes.Role, "Propietario"),
+            };
 
-                if (_repositorio.ExisteEmail(propietarioNuevo.email))
-                {
-                    ModelState.AddModelError("email", "Este email ya está registrado");
-                    error = true;
-                }
-                if (error)
-                {
-                    return View();
-                }
+            var token = new JwtSecurityToken(
+                issuer: jwt["Issuer"],
+                audience: jwt["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddHours(6),
+                signingCredentials: creds);
 
-                propietarioNuevo.estado = 1;
-                propietarioNuevo.nombre = propietarioNuevo.nombre.ToUpper();
-                propietarioNuevo.apellido = propietarioNuevo.apellido.ToUpper();
-                propietarioNuevo.email = propietarioNuevo.email.ToLower();
-                _repositorio.AgregarPropietario(propietarioNuevo);
-
-                TempData["Exito"] = "Propietario agregado con éxito";
-                return RedirectToAction("Index");
-            }
-            return View("Agregar", propietarioNuevo);
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }

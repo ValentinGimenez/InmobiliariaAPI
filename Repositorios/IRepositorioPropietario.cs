@@ -4,15 +4,14 @@ namespace _net_integrador.Repositorios
 {
     public interface IRepositorioPropietario
     {
-        List<Propietario> ObtenerPropietarios();
-         List<Propietario> ObtenerPropietariosActivos();
-        Propietario ObtenerPropietarioId(int id);
-        Propietario ActualizarPropietario(Propietario propietario);
-        bool EliminarPropietario(int id);
-        void ActivarPropietario(int id);
+        Propietario? ObtenerPorEmail(string email);
 
-        void AgregarPropietario(Propietario propietario);
-        bool ExisteDni(string dni, int? idExcluido = null);
-        bool ExisteEmail(string email, int? idExcluido = null);
+        Propietario? ObtenerPropietarioId(int id);
+
+        Propietario ActualizarPropietario(Propietario p);
+
+        bool CambiarPassword(int id, string nueva);
+
+        int AgregarPropietario(Propietario p);
     }
 }

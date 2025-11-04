@@ -1,138 +1,103 @@
-using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using _net_integrador.Models;
 using _net_integrador.Repositorios;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
-namespace _net_integrador.Controllers;
-
-[Authorize]
-public class InmuebleController : Controller
+namespace _net_integrador.Controllers.Api
 {
-    private readonly ILogger<InmuebleController> _logger;
-    private readonly IRepositorioInmueble _repositorioInmueble;
-    private readonly IRepositorioPropietario _repositorioPropietario;
-    private readonly IRepositorioTipoInmueble _repositorioTipoInmueble;
-
-    public InmuebleController(
-        ILogger<InmuebleController> logger,
-        IRepositorioInmueble repositorioInmueble,
-        IRepositorioPropietario repositorioPropietario,
-        IRepositorioTipoInmueble repositorioTipoInmueble
-    )
+    [ApiController]
+    [Route("api/[controller]")]
+    [Authorize]
+    public class InmueblesController : ControllerBase
     {
-        _logger = logger;
-        _repositorioInmueble = repositorioInmueble;
-        _repositorioPropietario = repositorioPropietario;
-        _repositorioTipoInmueble = repositorioTipoInmueble;
-    }
+        private readonly IRepositorioInmueble _repo;
+        private readonly IWebHostEnvironment _env;
 
-    public IActionResult Index()
-    {
-        var listaInmuebles = _repositorioInmueble.ObtenerInmuebles();
-        var propietarios = _repositorioPropietario.ObtenerPropietarios()
-            .Where(p => p.estado == 1)
-            .Select(p => new {
-                Id = p.id,
-                Nombre = $"{p.nombre} {p.apellido}"
-            }).ToList();
-    
-        ViewBag.Propietarios = new SelectList(propietarios, "Id", "Nombre");
-        return View(listaInmuebles);
-    }
-
-    public IActionResult Activar(int id)
-    {
-        _repositorioInmueble.ActivarOferta(id);
-        return RedirectToAction("Index");
-    }
-  
-    public IActionResult Detalles(int id)
-    {
-        var inmueble = _repositorioInmueble.ObtenerInmuebleId(id);
-        return View(inmueble);
-    }
-
-    public IActionResult PorPropietario(int propietarioId)
-    {
-        var listaInmuebles = _repositorioInmueble.ObtenerInmueblesPorPropietario(propietarioId);
-
-        var propietarios = _repositorioPropietario.ObtenerPropietarios()
-            .Select(p => new {
-                Id = p.id,
-                Nombre = $"{p.nombre} {p.apellido}"
-            }).ToList();
-
-        ViewBag.Propietarios = new SelectList(propietarios, "Id", "Nombre", propietarioId);
-        ViewBag.PropietarioId = propietarioId;
-
-        return View("Index", listaInmuebles);
-    }
-
-    [HttpGet]
-    public IActionResult Agregar()
-    {
-        var propietarios = _repositorioPropietario.ObtenerPropietariosActivos();
-        var tipos = _repositorioTipoInmueble.ObtenerTiposInmueble()
-            .Where(t => t.estado == 1)
-            .ToList();
-
-        ViewBag.Propietarios = new SelectList(propietarios, "id", "NombreCompleto");
-        ViewBag.TiposInmueble = new SelectList(tipos, "id", "tipo");
-        return View();
-    }
-
-    [HttpGet]
-    public IActionResult Editar(int id)
-    {
-        var inmuebleSeleccionado = _repositorioInmueble.ObtenerInmuebleId(id);
-        return View(inmuebleSeleccionado);
-    }
-
-    public IActionResult Suspender(int id)
-    {
-        _repositorioInmueble.SuspenderOferta(id);
-        return RedirectToAction("Index");
-    }
-   
-    [HttpPost]
-    public IActionResult Editar(Inmueble inmuebleEditado)
-    {
-        TempData["Exito"] = "Datos guardados con éxito";
-        _repositorioInmueble.ActualizarInmueble(inmuebleEditado);
-        return RedirectToAction("Index");
-    }
-
-    [HttpPost]
-    public IActionResult Agregar(Inmueble inmuebleNuevo)
-    {
-        if (ModelState.IsValid)
+        public InmueblesController(IRepositorioInmueble repo, IWebHostEnvironment env)
         {
-            _repositorioInmueble.AgregarInmueble(inmuebleNuevo);
-            TempData["Exito"] = "Inmueble agregado con éxito";
-            return RedirectToAction("Index");
+            _repo = repo;
+            _env = env;
         }
 
-        if (inmuebleNuevo.id_propietario <= 0)
+        private int GetPropietarioId()
         {
-            ModelState.AddModelError("id_propietario", "Debe seleccionar un propietario");
-        }
-        if (inmuebleNuevo.id_tipo <= 0)
-        {
-            ModelState.AddModelError("id_tipo", "Debe seleccionar un tipo de inmueble");
+            var claim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            return int.TryParse(claim, out var id) ? id : 0;
         }
 
-        var tipos = _repositorioTipoInmueble.ObtenerTiposInmueble()
-            .Where(t => t.estado == 1)
-            .ToList();
+        [HttpGet]
+        public ActionResult<List<Inmueble>> Get()
+        {
+            var pid = GetPropietarioId();
+            if (pid == 0) return Unauthorized();
 
-        var propietarios = _repositorioPropietario.ObtenerPropietarios()
-            .Where(p => p.estado == 1)
-            .ToList();
+            var lista = _repo.ObtenerPorPropietario(pid);
+            return Ok(lista);
+        }
 
-        ViewBag.TiposInmueble = new SelectList(tipos, "id", "tipo", inmuebleNuevo.id_tipo);
-        ViewBag.Propietarios = new SelectList(propietarios, "id", "NombreCompleto");
+        [HttpPost("cargar")]
+        [RequestSizeLimit(20_000_000)]
+        public ActionResult<Inmueble> Cargar([FromForm] IFormFile imagen, [FromForm] string inmueble)
+        {
+            var pid = GetPropietarioId();
+            if (pid == 0) return Unauthorized();
 
-        return View("Agregar", inmuebleNuevo);
+            var opts = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true,
+                Converters = { new JsonStringEnumConverter() }
+            };
+            var nuevo = JsonSerializer.Deserialize<Inmueble>(inmueble, opts);
+            if (nuevo == null) return BadRequest("Datos del inmueble inválidos.");
+
+            nuevo.id_propietario = pid;
+            if (nuevo.estado == 0) nuevo.estado = Estado.Disponible;
+
+            nuevo = _repo.AgregarInmueble(nuevo);
+
+            if (imagen != null && imagen.Length > 0)
+            {
+                var uploads = Path.Combine(_env.WebRootPath ?? "wwwroot", "Uploads");
+                Directory.CreateDirectory(uploads);
+
+                var fileName = $"{Guid.NewGuid()}{Path.GetExtension(imagen.FileName)}";
+                var fullPath = Path.Combine(uploads, fileName);
+
+                using (var fs = new FileStream(fullPath, FileMode.Create))
+                    imagen.CopyTo(fs);
+
+                var relativa = Path.Combine("Uploads", fileName).Replace("\\", "/");
+                _repo.ActualizarImagen(nuevo.id, relativa);
+                nuevo.imagen = relativa;
+            }
+
+            return Ok(nuevo);
+        }
+        [HttpPut("actualizar")]
+        public ActionResult<Inmueble> Actualizar([FromBody] Inmueble body)
+        {
+            var pid = GetPropietarioId();
+            if (pid == 0) return Unauthorized();
+
+            var actual = _repo.ObtenerInmuebleId(body.id);
+            if (actual.id == 0 || actual.id_propietario != pid)
+                return NotFound("Inmueble no encontrado o no pertenece al propietario.");
+
+            if (body.tipo != 0) actual.tipo = body.tipo;
+            if (!string.IsNullOrWhiteSpace(body.direccion)) actual.direccion = body.direccion;
+            if (body.uso != 0) actual.uso = body.uso;
+            if (body.ambientes.HasValue) actual.ambientes = body.ambientes;
+            if (body.eje_x.HasValue) actual.eje_x = body.eje_x;
+            if (body.eje_y.HasValue) actual.eje_y = body.eje_y;
+            if (body.precio.HasValue && body.precio.Value >= 0) actual.precio = body.precio;
+            if (body.estado != 0) actual.estado = body.estado;
+            if (body.superficie.HasValue) actual.superficie = body.superficie;
+
+            var res = _repo.ActualizarInmueble(actual);
+            return Ok(res);
+        }
     }
 }

@@ -1,42 +1,51 @@
 using _net_integrador.Repositorios;
-using Microsoft.AspNetCore.Authentication.Cookies; 
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllers()
+    .AddNewtonsoftJson(o =>
+        o.SerializerSettings.ReferenceLoopHandling =
+            Newtonsoft.Json.ReferenceLoopHandling.Ignore);
 
-builder.Services.AddSession(options => {
-    options.IdleTimeout = TimeSpan.FromMinutes(20);
-    options.Cookie.HttpOnly = true;
-    options.Cookie.IsEssential = true;
-});
+builder.Services.AddCors(o => o.AddPolicy("AllowAll",
+    p => p.AllowAnyOrigin()
+          .AllowAnyHeader()
+          .AllowAnyMethod()));
 
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
+var jwtSection = builder.Configuration.GetSection("Jwt");
+var key = Encoding.UTF8.GetBytes(jwtSection["Key"]!);
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(o =>
     {
-        options.LoginPath = "/Usuario/Login";
-        options.LogoutPath = "/Usuarios/Logout";
-		options.AccessDeniedPath = "/Home/Restringido"; 
+        o.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSection["Issuer"],
+            ValidAudience = jwtSection["Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(key),
+            ClockSkew = TimeSpan.Zero
+        };
     });
 
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("Administrador", policy => policy.RequireRole("Admin")); 
-});
+builder.Services.AddAuthorization();
 
 builder.Services.AddTransient<IRepositorioInmueble, RepositorioInmueble>();
 builder.Services.AddTransient<IRepositorioPropietario, RepositorioPropietario>();
-builder.Services.AddTransient<IRepositorioInquilino, RepositorioInquilino>();
-builder.Services.AddTransient<IRepositorioContrato, RepositorioContrato>();
-builder.Services.AddTransient<IRepositorioPago, RepositorioPago>();
-builder.Services.AddTransient<IRepositorioTipoInmueble, RepositorioTipoInmueble>();
-builder.Services.AddTransient<IRepositorioUsuario, RepositorioUsuario>();
-builder.Services.AddTransient<IRepositorioAuditoria, RepositorioAuditoria>();
-
+// builder.Services.AddTransient<IRepositorioInquilino, RepositorioInquilino>();
+// builder.Services.AddTransient<IRepositorioContrato, RepositorioContrato>();
+// builder.Services.AddTransient<IRepositorioPago, RepositorioPago>();
+// builder.Services.AddTransient<IRepositorioTipoInmueble, RepositorioTipoInmueble>();
+// builder.Services.AddTransient<IRepositorioUsuario, RepositorioUsuario>();
+// builder.Services.AddTransient<IRepositorioAuditoria, RepositorioAuditoria>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -45,15 +54,16 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
+
+
+app.UseCors("AllowAll");
+
 
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseSession();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
+
+app.MapControllers();
 
 app.Run();

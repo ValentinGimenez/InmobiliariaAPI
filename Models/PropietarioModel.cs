@@ -1,38 +1,44 @@
-namespace _net_integrador.Models;
-using System.ComponentModel.DataAnnotations;
-
-
-public class Propietario
+namespace _net_integrador.Models
 {
-    public int id { get; set; }
-    [Required(ErrorMessage = "Ingrese un Nombre")]
-    [RegularExpression(@"^[\p{L}]+$", ErrorMessage = "El nombre no puede contener números ni caracteres especiales")]
+    public class Propietario
+    {
+        public int id { get; set; }
+        public string nombre { get; set; } = string.Empty;
+        public string apellido { get; set; } = string.Empty;
+        public string dni { get; set; } = string.Empty;
+        public string email { get; set; } = string.Empty;
+        public string telefono { get; set; } = string.Empty;
+        public string? clave { get; set; }
+        public int estado { get; set; } = 1;
 
-    public string nombre { get; set; } = string.Empty;
-    [Required(ErrorMessage = "Ingrese un Apellido")]
-    [RegularExpression(@"^[\p{L}]+$", ErrorMessage = "El apellido no puede contener números ni caracteres especiales")]
-    public string apellido { get; set; } = string.Empty;
-    [Required(ErrorMessage = "Ingrese un DNI")]
-    [RegularExpression(@"^\d{8}$", ErrorMessage = "El DNI no es válido")]
-    public string dni { get; set; } = string.Empty;
-    [Required(ErrorMessage = "Ingrese un Email")]
-    [EmailAddress(ErrorMessage = "El email no es válido")]
-    public string email { get; set; }= string.Empty;
-     [Required(ErrorMessage = "El telefono es obligatorio")]
-   [RegularExpression(@"^(\d{8,12})?$", ErrorMessage = "El teléfono no es válido")]
-    public string telefono { get; set; } = string.Empty; 
-    public int estado { get; set; }
-public override string ToString()
-		{
-			//return $"{Apellido}, {Nombre}";
-			//return $"{Nombre} {Apellido}";
-			var res = $"{nombre} {apellido}";
-			if(!String.IsNullOrEmpty(dni)) {
-				res += $" ({dni})";
-			}
-			return res;
-		}
-public string? NombreCompleto => $"{nombre} {apellido}";
+        public Propietario() { }
 
+        public Propietario(string nombre, string apellido, string dni, string email, string telefono, string clave)
+        {
+            this.nombre = nombre;
+            this.apellido = apellido;
+            this.dni = dni;
+            this.email = email;
+            this.telefono = telefono;
+            this.clave = clave;
+            this.estado = 1;
+        }
+
+        public Propietario(int id, string nombre, string apellido, string dni, string email, string telefono, string clave, int estado)
+        {
+            this.id = id;
+            this.nombre = nombre;
+            this.apellido = apellido;
+            this.dni = dni;
+            this.email = email;
+            this.telefono = telefono;
+            this.clave = clave;
+            this.estado = estado;
+        }
+
+        public override string ToString()
+        {
+            return $"{apellido}, {nombre} ({email})";
+        }
+    }
 }
-//id, nombre, apellido, dni(varchar),email, telegono, password, estado(int)
