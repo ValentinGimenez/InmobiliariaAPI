@@ -86,16 +86,10 @@ namespace _net_integrador.Controllers.Api
             if (actual.id == 0 || actual.id_propietario != pid)
                 return NotFound("Inmueble no encontrado o no pertenece al propietario.");
 
-            if (body.tipo != 0) actual.tipo = body.tipo;
-            if (!string.IsNullOrWhiteSpace(body.direccion)) actual.direccion = body.direccion;
-            if (body.uso != 0) actual.uso = body.uso;
-            if (body.ambientes.HasValue) actual.ambientes = body.ambientes;
-            if (body.eje_x.HasValue) actual.eje_x = body.eje_x;
-            if (body.eje_y.HasValue) actual.eje_y = body.eje_y;
-            if (body.precio.HasValue && body.precio.Value >= 0) actual.precio = body.precio;
-            if (body.estado != 0) actual.estado = body.estado;
-            if (body.superficie.HasValue) actual.superficie = body.superficie;
-
+            if (body.estado != 0) 
+            {
+                actual.estado = body.estado;
+            }
             var res = _repo.ActualizarInmueble(actual);
             return Ok(res);
         }
