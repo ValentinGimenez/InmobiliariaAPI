@@ -6,11 +6,12 @@ using System.Security.Claims;
 using System.Text;
 using _net_integrador.Models;
 using _net_integrador.Repositorios;
+using _net_integrador.Utils;
 
 namespace _net_integrador.Controllers.Api
 {
     [ApiController]
-    [Route("api/[controller]")] 
+    [Route("api/[controller]")]
     public class PropietariosController : ControllerBase
     {
         private readonly IRepositorioPropietario _repo;
@@ -39,11 +40,12 @@ namespace _net_integrador.Controllers.Api
         [Authorize]
         public ActionResult<Propietario> Get()
         {
-            var id = GetUserIdOrThrow();
+            var id = User.GetUserIdOrThrow();
             var p = _repo.ObtenerPropietarioId(id);
             if (p == null)
                 return NotFound();
-            p.clave = null; // no exponer hash
+
+            p.clave = null;
             return Ok(p);
         }
 
@@ -51,7 +53,7 @@ namespace _net_integrador.Controllers.Api
         [Authorize]
         public ActionResult<Propietario> Actualizar([FromBody] Propietario dto)
         {
-            var id = GetUserIdOrThrow();
+            var id = User.GetUserIdOrThrow();
             var p = _repo.ObtenerPropietarioId(id);
             if (p == null)
                 return NotFound();
@@ -75,7 +77,7 @@ namespace _net_integrador.Controllers.Api
             if (string.IsNullOrWhiteSpace(newPassword) || newPassword.Length < 6)
                 return BadRequest("La nueva contraseña debe tener al menos 6 caracteres.");
 
-            var id = GetUserIdOrThrow();
+            var id = User.GetUserIdOrThrow();
             var p = _repo.ObtenerPropietarioId(id);
             if (p == null)
                 return NotFound();
@@ -88,15 +90,6 @@ namespace _net_integrador.Controllers.Api
                 return StatusCode(500, "No se pudo actualizar la contraseña.");
 
             return NoContent();
-        }
-
-
-        private int GetUserIdOrThrow()
-        {
-            var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            if (!int.TryParse(idStr, out var id) || id <= 0)
-                throw new UnauthorizedAccessException("Token inválido.");
-            return id;
         }
 
         private string GenerarToken(Propietario p)

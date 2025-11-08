@@ -26,7 +26,7 @@
 //         ViewBag.ContratoId = contratoId;
 //         return View(listaPagos);
 //     }
-    
+
 //     [HttpPost]
 //     public IActionResult Recibir()
 //     {
@@ -42,7 +42,7 @@
 //             TempData["Error"] = "Pago no encontrado.";
 //             return RedirectToAction("Index", "Contrato");
 //         }
-        
+
 //         var estadoAnterior = pago.estado.ToString();
 //         pago.estado = EstadoPago.recibido;
 //         pago.fecha_pago = DateTime.Now; // Se establece la fecha de pago al momento actual
@@ -54,7 +54,7 @@
 //             AccionAuditoria.Recibir, 
 //             User.Identity.Name ?? "Anónimo"
 //         );
-        
+
 //         TempData["Exito"] = "Pago recibido con éxito";
 //         return RedirectToAction("Index", new { contratoId = pago.id_contrato });
 //     }
@@ -67,7 +67,7 @@
 //             TempData["Error"] = "ID de pago inválido.";
 //             return RedirectToAction("Index", "Contrato");
 //         }
-        
+
 //         var pago = _pagoRepo.ObtenerPagoId(id);
 //         if (pago == null)
 //         {

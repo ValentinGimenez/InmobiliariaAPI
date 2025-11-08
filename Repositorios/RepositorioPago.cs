@@ -8,7 +8,6 @@ namespace _net_integrador.Repositorios;
 public class RepositorioPago : RepositorioBase, IRepositorioPago
 {
     public RepositorioPago(IConfiguration configuration) : base(configuration) { }
-
     public List<Pago> ObtenerPagosPorContrato(int contratoId)
     {
         List<Pago> pagos = new List<Pago>();
@@ -58,8 +57,6 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
         }
         return pagos;
     }
-
-
     public Pago? ObtenerPagoId(int id)
     {
         Pago? pago = null;
@@ -109,9 +106,6 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
         }
         return pago;
     }
-
-
-
     public void AgregarPago(Pago pago)
     {
         using (MySqlConnection connection = new MySqlConnection(connectionString))
@@ -130,7 +124,6 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
             }
         }
     }
-
     public void AnularPago(int id)
     {
         using (MySqlConnection connection = new MySqlConnection(connectionString))
@@ -145,7 +138,6 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
             }
         }
     }
-
     public void ActualizarPago(Pago pago)
     {
         using (MySqlConnection connection = new MySqlConnection(connectionString))
@@ -164,7 +156,7 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
             }
         }
     }
-  public DateTime? ObtenerFechaUltimoPagoRealizado(int contratoId)
+    public DateTime? ObtenerFechaUltimoPagoRealizado(int contratoId)
     {
         DateTime? fechaUltimoPago = null;
         using (MySqlConnection connection = new MySqlConnection(connectionString))
@@ -190,10 +182,10 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
         }
         return fechaUltimoPago;
     }
-public int ContarPagosRealizados(int idContrato)
+    public int ContarPagosRealizados(int idContrato)
     {
         int pagosRealizados = 0;
-        
+
         string query = "SELECT COUNT(*) FROM pago WHERE id_contrato = @idContrato AND estado = 'recibido'";
 
         using (var connection = new MySqlConnection(connectionString))
@@ -206,7 +198,7 @@ public int ContarPagosRealizados(int idContrato)
                 {
                     connection.Open();
                     object result = command.ExecuteScalar();
-                    
+
                     if (result != null && result != DBNull.Value)
                     {
                         pagosRealizados = Convert.ToInt32(result);

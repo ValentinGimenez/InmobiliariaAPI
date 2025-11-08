@@ -37,12 +37,12 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddTransient<IRepositorioInmueble, RepositorioInmueble>();
 builder.Services.AddTransient<IRepositorioPropietario, RepositorioPropietario>();
-// builder.Services.AddTransient<IRepositorioInquilino, RepositorioInquilino>();
-// builder.Services.AddTransient<IRepositorioContrato, RepositorioContrato>();
-// builder.Services.AddTransient<IRepositorioPago, RepositorioPago>();
+builder.Services.AddTransient<IRepositorioInquilino, RepositorioInquilino>();
+builder.Services.AddTransient<IRepositorioContrato, RepositorioContrato>();
+builder.Services.AddTransient<IRepositorioPago, RepositorioPago>();
 // builder.Services.AddTransient<IRepositorioTipoInmueble, RepositorioTipoInmueble>();
 // builder.Services.AddTransient<IRepositorioUsuario, RepositorioUsuario>();
-// builder.Services.AddTransient<IRepositorioAuditoria, RepositorioAuditoria>();
+builder.Services.AddTransient<IRepositorioAuditoria, RepositorioAuditoria>();
 
 var app = builder.Build();
 

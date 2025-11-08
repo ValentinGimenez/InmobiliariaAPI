@@ -4,9 +4,9 @@ namespace _net_integrador.Models
     {
         public int id { get; set; }
         public int id_propietario { get; set; }
-        public TipoInmueble tipo { get; set; } 
-        public UsoInmueble uso { get; set; } 
-        public Estado estado { get; set; } 
+        public TipoInmueble tipo { get; set; }
+        public UsoInmueble uso { get; set; }
+        public Estado estado { get; set; }
         public string direccion { get; set; } = string.Empty;
         public int? ambientes { get; set; }
         public double? eje_x { get; set; }

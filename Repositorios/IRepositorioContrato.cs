@@ -7,10 +7,12 @@ namespace _net_integrador.Repositorios
     {
         List<Contrato> ObtenerContratos();
         Contrato? ObtenerContratoId(int id);
-        public int AgregarContrato(Contrato contrato);
-        public int ActualizarContrato(Contrato contrato);
+        List<Contrato> ObtenerVigentesPorPropietario(int idPropietario);
+        Contrato? ObtenerVigentePorInmuebleYPropietario(int idInmueble, int idPropietario);
+        int AgregarContrato(Contrato contrato);
+        int ActualizarContrato(Contrato contrato);
         List<Contrato> ObtenerContratoPorInmueble(int idInmueble, int idContrato);
-        List<Contrato> ObtenerContratosVigentesPorRango(DateTime fechaInicio, DateTime fechaFin_);
-        List<Contrato> ObtenerContratosPorVencimiento(int diasVencimiento);
+        List<Contrato> ObtenerContratosVigentesPorRango(DateTime fechaInicio, DateTime fechaFin);
+        List<Contrato> ObtenerContratosPorVencimiento(int diasHastaVencimiento);
     }
 }

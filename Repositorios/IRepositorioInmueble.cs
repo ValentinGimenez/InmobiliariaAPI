@@ -8,6 +8,13 @@ namespace _net_integrador.Repositorios
         Inmueble ObtenerInmuebleId(int id);
         Inmueble AgregarInmueble(Inmueble i);
         Inmueble ActualizarInmueble(Inmueble i);
-        bool ActualizarImagen(int id, string rutaRelativa);
+        bool ActualizarEstado(int id, Estado estado);
+        List<Inmueble> ObtenerTodos();
+        List<Inmueble> ObtenerInmueblesDisponibles();
+        bool SuspenderOferta(int id);
+        bool ActivarOferta(int id);
+        bool MarcarComoAlquilado(int id);
+        List<Inmueble> BuscarDisponiblePorFecha(DateTime inicio, DateTime fin);
+
     }
 }

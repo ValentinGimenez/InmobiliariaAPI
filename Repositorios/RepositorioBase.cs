@@ -12,7 +12,7 @@ namespace _net_integrador.Repositorios
             if (string.IsNullOrWhiteSpace(cs))
                 throw new InvalidOperationException("Falta ConnectionStrings:Mysql en appsettings.json");
 
-            connectionString = cs; // ✅ ya no es null
+            connectionString = cs;
         }
     }
 }
