@@ -36,25 +36,25 @@ namespace _net_integrador.Controllers.Api
         }
 
         // GET api/Contratos?fechaInicio=2025-01-01&fechaFin=2025-12-31&diasVencimiento=30
-        [HttpGet]
-        public ActionResult<IEnumerable<Contrato>> Get([FromQuery] DateTime? fechaInicio, [FromQuery] DateTime? fechaFin, [FromQuery] int? diasVencimiento)
-        {
-            IEnumerable<Contrato> lista;
+        // [HttpGet]
+        // public ActionResult<IEnumerable<Contrato>> Get([FromQuery] DateTime? fechaInicio, [FromQuery] DateTime? fechaFin, [FromQuery] int? diasVencimiento)
+        // {
+        //     IEnumerable<Contrato> lista;
 
-            if (fechaInicio.HasValue && fechaFin.HasValue && fechaInicio <= fechaFin)
-            {
-                lista = _contratoRepo.ObtenerContratosVigentesPorRango(fechaInicio.Value, fechaFin.Value);
-                return Ok(lista);
-            }
-            if (diasVencimiento.HasValue && diasVencimiento.Value > 0)
-            {
-                lista = _contratoRepo.ObtenerContratosPorVencimiento(diasVencimiento.Value);
-                return Ok(lista);
-            }
+        //     if (fechaInicio.HasValue && fechaFin.HasValue && fechaInicio <= fechaFin)
+        //     {
+        //         lista = _contratoRepo.ObtenerContratosVigentesPorRango(fechaInicio.Value, fechaFin.Value);
+        //         return Ok(lista);
+        //     }
+        //     if (diasVencimiento.HasValue && diasVencimiento.Value > 0)
+        //     {
+        //         lista = _contratoRepo.ObtenerContratosPorVencimiento(diasVencimiento.Value);
+        //         return Ok(lista);
+        //     }
 
-            lista = _contratoRepo.ObtenerContratos();
-            return Ok(lista);
-        }
+        //     lista = _contratoRepo.ObtenerContratos();
+        //     return Ok(lista);
+        // }
 
         // GET api/Contratos/5
         [HttpGet("{id:int}")]
@@ -66,7 +66,8 @@ namespace _net_integrador.Controllers.Api
         }
 
         // GET api/Contratos/vigentes/mios
-        [HttpGet("vigentes/mios")]
+        // [HttpGet("vigentes/mios")]
+        [HttpGet]
         public ActionResult<List<Contrato>> GetVigentesDelPropietario()
         {
             var pid = User.GetUserIdOrThrow();
