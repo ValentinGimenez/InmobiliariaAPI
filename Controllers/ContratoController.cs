@@ -89,16 +89,15 @@ namespace _net_integrador.Controllers.Api
         [HttpPost]
         public ActionResult<Contrato> Crear([FromBody] Contrato contrato)
         {
-            if (contrato == null) return BadRequest(new { message = "Datos inválidos." });
+            if (contrato == null)
+                return BadRequest(new { message = "Datos inválidos." });
 
-            // Validaciones mínimas
             if (!contrato.fecha_inicio.HasValue)
                 return BadRequest(new { message = "Fecha de inicio requerida." });
 
             if (contrato.DuracionEnMeses <= 0 && !contrato.fecha_fin.HasValue)
                 return BadRequest(new { message = "Defina DuracionEnMeses o fecha_fin." });
 
-            // Autocalcular fecha_fin si viene duración
             if (contrato.DuracionEnMeses > 0 && contrato.fecha_inicio.HasValue)
                 contrato.fecha_fin = contrato.fecha_inicio.Value.AddMonths(contrato.DuracionEnMeses);
 
@@ -108,20 +107,19 @@ namespace _net_integrador.Controllers.Api
             if (!contrato.monto_mensual.HasValue)
                 return BadRequest(new { message = "Debe ingresar un monto mensual." });
 
-            contrato.estado = 1; // vigente
+            contrato.estado = 1;
+
             var id = _contratoRepo.AgregarContrato(contrato);
 
-            // marcar inmueble alquilado
             if (contrato.id_inmueble.HasValue && contrato.id_inmueble.Value > 0)
-                _inmuebleRepo.ActualizarEstado(contrato.id_inmueble.Value,contrato.Inmueble.estado);
-
-            // auditoría
-            _auditoriaRepo.InsertarRegistroAuditoria(
-                TipoAuditoria.Contrato, id, AccionAuditoria.Crear, User.Identity?.Name ?? "Anónimo");
+            {
+                _inmuebleRepo.MarcarComoAlquilado(contrato.id_inmueble.Value);
+            }
 
             contrato.id = id;
             return CreatedAtAction(nameof(GetById), new { id }, contrato);
         }
+
 
         // PUT api/Contratos/5
         [HttpPut("{id:int}")]

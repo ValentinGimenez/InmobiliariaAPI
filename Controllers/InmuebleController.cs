@@ -81,5 +81,18 @@ namespace _net_integrador.Controllers.Api
             var res = _repo.ActualizarInmueble(actual);
             return Ok(res);
         }
+        // GET api/Inmuebles/{id}
+        [HttpGet("{id:int}")]
+        public ActionResult<Inmueble> GetById(int id)
+        {
+            var pid = User.GetUserIdOrThrow();
+            var inmueble = _repo.ObtenerInmuebleId(id);
+            if (inmueble == null)
+                return NotFound(new { message = "Inmueble no encontrado." });
+            if (inmueble.id_propietario != pid)
+                return Unauthorized(new { message = "No tienes permiso para acceder a este inmueble." });
+            return Ok(inmueble);
+        }
     }
+
 }

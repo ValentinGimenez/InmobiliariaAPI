@@ -36,7 +36,6 @@ public class RepositorioContrato : RepositorioBase, IRepositorioContrato
         inm.id_propietario           AS inm_id_propietario,
         inm.direccion                AS inm_direccion,
 
-        -- 👇 fuerza numérico (ENUM index empieza en 1)
         (inm.tipo+0)                 AS inm_tipo,
         (inm.uso+0)                  AS inm_uso,
         (inm.estado+0)               AS inm_estado,

@@ -9,6 +9,6 @@ namespace _net_integrador.Repositorios
         Inmueble AgregarInmueble(Inmueble i);
         bool ActualizarEstado(int id, Estado estado);
         Inmueble ActualizarInmueble(Inmueble i);
-
+        public void MarcarComoAlquilado(int id);
     }
 }

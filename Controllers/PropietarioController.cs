@@ -57,7 +57,8 @@ namespace _net_integrador.Controllers.Api
             var p = _repo.ObtenerPropietarioId(id);
             if (p == null)
                 return NotFound();
-
+            if (p.id != id)
+                return Unauthorized(new { message = "No tienes permiso." });
             p.nombre = string.IsNullOrWhiteSpace(dto.nombre) ? p.nombre : dto.nombre;
             p.apellido = string.IsNullOrWhiteSpace(dto.apellido) ? p.apellido : dto.apellido;
             p.dni = string.IsNullOrWhiteSpace(dto.dni) ? p.dni : dto.dni;
@@ -81,7 +82,8 @@ namespace _net_integrador.Controllers.Api
             var p = _repo.ObtenerPropietarioId(id);
             if (p == null)
                 return NotFound();
-
+            if (p.id != id)
+                return Unauthorized(new { message = "No tienes permiso." });
             if (string.IsNullOrEmpty(p.clave) || !BCrypt.Net.BCrypt.Verify(currentPassword, p.clave))
                 return Unauthorized("La contraseña actual es incorrecta.");
 

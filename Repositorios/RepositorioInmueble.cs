@@ -26,7 +26,7 @@ namespace _net_integrador.Repositorios
             var tipoStr = r.GetString("tipo");
             var usoStr = r.GetString("uso");
             var estadoStr = r.GetString("estado");
-            
+
             i.tipo = Enum.TryParse<TipoInmueble>(tipoStr, true, out var t) ? t : TipoInmueble.Casa;
             i.uso = Enum.TryParse<UsoInmueble>(usoStr, true, out var u) ? u : UsoInmueble.Residencial;
             i.estado = Enum.TryParse<Estado>(estadoStr, true, out var e) ? e : Estado.Disponible;
@@ -99,7 +99,7 @@ namespace _net_integrador.Repositorios
             i.estado = estadoCreacion;
             return i;
         }
-                public Inmueble ActualizarInmueble(Inmueble i)
+        public Inmueble ActualizarInmueble(Inmueble i)
         {
             using (var cn = new MySqlConnection(connectionString))
             {
@@ -140,6 +140,21 @@ namespace _net_integrador.Repositorios
                     return rows > 0;
                 }
             }
+        }
+        public void MarcarComoAlquilado(int id)
+        {
+            string sql = "UPDATE inmueble SET estado=@estado WHERE id=@id";
+
+            using (MySqlConnection connection = new MySqlConnection(connectionString))
+            {
+                MySqlCommand cmd = new MySqlCommand(sql, connection);
+                cmd.Parameters.AddWithValue("@estado", (int)Estado.Alquilado);
+                cmd.Parameters.AddWithValue("@id", id);
+                connection.Open();
+                cmd.ExecuteNonQuery();
+                connection.Close();
+            }
+
         }
     }
 }
