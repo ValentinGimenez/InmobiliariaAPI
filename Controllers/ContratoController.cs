@@ -113,7 +113,7 @@ namespace _net_integrador.Controllers.Api
 
             // marcar inmueble alquilado
             if (contrato.id_inmueble.HasValue && contrato.id_inmueble.Value > 0)
-                _inmuebleRepo.MarcarComoAlquilado(contrato.id_inmueble.Value);
+                _inmuebleRepo.ActualizarEstado(contrato.id_inmueble.Value,contrato.Inmueble.estado);
 
             // auditoría
             _auditoriaRepo.InsertarRegistroAuditoria(

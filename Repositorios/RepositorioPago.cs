@@ -8,6 +8,7 @@ namespace _net_integrador.Repositorios;
 public class RepositorioPago : RepositorioBase, IRepositorioPago
 {
     public RepositorioPago(IConfiguration configuration) : base(configuration) { }
+
     public List<Pago> ObtenerPagosPorContrato(int contratoId)
     {
         List<Pago> pagos = new List<Pago>();
@@ -57,6 +58,8 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
         }
         return pagos;
     }
+
+
     public Pago? ObtenerPagoId(int id)
     {
         Pago? pago = null;
@@ -106,6 +109,9 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
         }
         return pago;
     }
+
+
+
     public void AgregarPago(Pago pago)
     {
         using (MySqlConnection connection = new MySqlConnection(connectionString))
@@ -124,6 +130,7 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
             }
         }
     }
+
     public void AnularPago(int id)
     {
         using (MySqlConnection connection = new MySqlConnection(connectionString))
@@ -138,6 +145,7 @@ public class RepositorioPago : RepositorioBase, IRepositorioPago
             }
         }
     }
+
     public void ActualizarPago(Pago pago)
     {
         using (MySqlConnection connection = new MySqlConnection(connectionString))

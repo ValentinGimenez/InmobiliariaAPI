@@ -45,7 +45,7 @@ namespace _net_integrador.Controllers.Api
             if (p == null)
                 return NotFound();
 
-            p.clave = null;
+            //p.clave = null;
             return Ok(p);
         }
 
@@ -85,7 +85,12 @@ namespace _net_integrador.Controllers.Api
             if (string.IsNullOrEmpty(p.clave) || !BCrypt.Net.BCrypt.Verify(currentPassword, p.clave))
                 return Unauthorized("La contraseña actual es incorrecta.");
 
-            var ok = _repo.CambiarPassword(id, newPassword);
+            if (BCrypt.Net.BCrypt.Verify(newPassword, p.clave))
+                return BadRequest("La nueva contraseña no puede ser igual a la actual.");
+
+            var hash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+
+            var ok = _repo.CambiarPassword(id, hash);
             if (!ok)
                 return StatusCode(500, "No se pudo actualizar la contraseña.");
 

@@ -11,7 +11,6 @@ namespace _net_integrador.Models
 
         [Display(Name = "Contrato")]
         public int id_contrato { get; set; }
-        public Contrato Contrato { get; set; } = new Contrato();
 
         [Display(Name = "Nro. Pago")]
         public int nro_pago { get; set; }

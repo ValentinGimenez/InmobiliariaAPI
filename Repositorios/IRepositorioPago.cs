@@ -10,8 +10,7 @@ public interface IRepositorioPago
     void AgregarPago(Pago pago);
     void AnularPago(int id);
     void ActualizarPago(Pago pago);
-
     public DateTime? ObtenerFechaUltimoPagoRealizado(int contratoId);
     public int ContarPagosRealizados(int contratoId);
-    
+
 }
