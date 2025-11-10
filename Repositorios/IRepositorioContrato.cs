@@ -1,18 +1,18 @@
 using _net_integrador.Models;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace _net_integrador.Repositorios
 {
     public interface IRepositorioContrato
     {
-        List<Contrato> ObtenerContratos();
-        Contrato? ObtenerContratoId(int id);
-        List<Contrato> ObtenerVigentesPorPropietario(int idPropietario);
-        Contrato? ObtenerVigentePorInmuebleYPropietario(int idInmueble, int idPropietario);
-        int AgregarContrato(Contrato contrato);
-        int ActualizarContrato(Contrato contrato);
-        List<Contrato> ObtenerContratoPorInmueble(int idInmueble, int idContrato);
-        List<Contrato> ObtenerContratosVigentesPorRango(DateTime fechaInicio, DateTime fechaFin);
-        List<Contrato> ObtenerContratosPorVencimiento(int diasHastaVencimiento);
+        Task<List<Contrato>> ObtenerContratos(); 
+        Task<Contrato?> ObtenerContratoId(int id);  
+        Task<List<Contrato>> ObtenerVigentesPorPropietario(int idPropietario);
+        Task<Contrato?> ObtenerVigentePorInmuebleYPropietario(int idInmueble, int idPropietario);
+        Task<int> AgregarContrato(Contrato contrato); 
+        Task<int> ActualizarContrato(Contrato contrato); 
+        Task<List<Contrato>> ObtenerContratoPorInmueble(int idInmueble, int idContrato); 
+        Task<List<Contrato>> ObtenerContratosVigentesPorRango(DateTime fechaInicio, DateTime fechaFin);
     }
 }

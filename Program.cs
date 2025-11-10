@@ -2,9 +2,15 @@ using _net_integrador.Repositorios;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.EntityFrameworkCore;
+using _net_integrador.Models;
+using _net_integrador.Utils;
+
 
 var builder = WebApplication.CreateBuilder(args);
-
+builder.Services.AddDbContext<DataContext>(options =>
+    options.UseMySql(builder.Configuration.GetConnectionString("Mysql"), 
+    ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("Mysql"))));
 builder.Services.AddControllers()
     .AddNewtonsoftJson(o =>
         o.SerializerSettings.ReferenceLoopHandling =
@@ -40,10 +46,7 @@ builder.Services.AddTransient<IRepositorioPropietario, RepositorioPropietario>()
 builder.Services.AddTransient<IRepositorioInquilino, RepositorioInquilino>();
 builder.Services.AddTransient<IRepositorioContrato, RepositorioContrato>();
 builder.Services.AddTransient<IRepositorioPago, RepositorioPago>();
-// builder.Services.AddTransient<IRepositorioTipoInmueble, RepositorioTipoInmueble>();
-// builder.Services.AddTransient<IRepositorioUsuario, RepositorioUsuario>();
-builder.Services.AddTransient<IRepositorioAuditoria, RepositorioAuditoria>();
-
+//builder.Services.AddTransient<EmailSender>();  
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())

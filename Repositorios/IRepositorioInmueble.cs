@@ -1,14 +1,16 @@
 using _net_integrador.Models;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace _net_integrador.Repositorios
 {
     public interface IRepositorioInmueble
     {
-        List<Inmueble> ObtenerPorPropietario(int propietarioId);
-        Inmueble ObtenerInmuebleId(int id);
-        Inmueble AgregarInmueble(Inmueble i);
-        bool ActualizarEstado(int id, Estado estado);
-        Inmueble ActualizarInmueble(Inmueble i);
-        public void MarcarComoAlquilado(int id);
+        Task<List<Inmueble>> ObtenerPorPropietario(int propietarioId);
+        Task<Inmueble> ObtenerInmuebleId(int id);
+        Task<Inmueble> AgregarInmueble(Inmueble i);
+        Task<bool> ActualizarEstado(int id, int estado);
+        Task<Inmueble> ActualizarInmueble(Inmueble i);
+        Task MarcarComoAlquilado(int i);
     }
 }

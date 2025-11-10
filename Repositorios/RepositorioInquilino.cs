@@ -1,107 +1,46 @@
-using System;
-using System.Collections.Generic;
 using _net_integrador.Models;
-using Microsoft.Extensions.Configuration;
-using MySql.Data.MySqlClient;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace _net_integrador.Repositorios
 {
-    public class RepositorioInquilino : RepositorioBase, IRepositorioInquilino
+    public class RepositorioInquilino : IRepositorioInquilino
     {
-        public RepositorioInquilino(IConfiguration configuration) : base(configuration) { }
+        private readonly DataContext _context;
 
-        public Inquilino? ObtenerInquilinoId(int id)
+        public RepositorioInquilino(DataContext context)
         {
-            Inquilino? inquilino = null;
-            using (MySqlConnection connection = new MySqlConnection(connectionString))
-            {
-                var sql = "SELECT id, nombre, apellido, dni, email, telefono, estado, imagen FROM inquilino WHERE id = @id";
-                using (MySqlCommand command = new MySqlCommand(sql, connection))
-                {
-                    command.Parameters.AddWithValue("@id", id);
-                    connection.Open();
-                    var reader = command.ExecuteReader();
-                    if (reader.Read())
-                    {
-                        inquilino = new Inquilino
-                        {
-                            id = reader.GetInt32("id"),
-                            nombre = reader.GetString("nombre"),
-                            apellido = reader.GetString("apellido"),
-                            dni = reader.GetString("dni"),
-                            email = reader.GetString("email"),
-                            telefono = reader.GetString("telefono"),
-                            estado = reader.GetInt32("estado"),
-                            imagen = reader.IsDBNull(reader.GetOrdinal("imagen")) ? null : reader.GetString("imagen")
-
-                        };
-                    }
-                    connection.Close();
-                }
-            }
-            return inquilino;
+            _context = context;
         }
-        public void AgregarInquilino(Inquilino inquilino)
+        public async Task<Inquilino?> ObtenerInquilinoId(int id)
         {
-            using (var connection = new MySqlConnection(connectionString))
-            {
-                const string sql = @"
-                    INSERT INTO inquilino
-                        (nombre, apellido, dni, email, telefono, estado, imagen)
-                    VALUES
-                        (@nombre, @apellido, @dni, @email, @telefono, @estado, @imagen)";
-                using (var command = new MySqlCommand(sql, connection))
-                {
-                    command.Parameters.AddWithValue("@nombre", inquilino.nombre);
-                    command.Parameters.AddWithValue("@apellido", inquilino.apellido);
-                    command.Parameters.AddWithValue("@dni", inquilino.dni);
-                    command.Parameters.AddWithValue("@email", inquilino.email);
-                    command.Parameters.AddWithValue("@telefono", inquilino.telefono);
-                    command.Parameters.AddWithValue("@estado", inquilino.estado);
-                    command.Parameters.AddWithValue("@imagen", (object?)inquilino.imagen ?? DBNull.Value);
-
-                    connection.Open();
-                    command.ExecuteNonQuery();
-                    connection.Close();
-                }
-            }
+            return await _context.inquilino
+                .FirstOrDefaultAsync(i => i.id == id);
         }
-        public bool ExisteDni(string dni, int? idExcluido = null)
+        public async Task AgregarInquilino(Inquilino inquilino)
         {
-            using (MySqlConnection connection = new MySqlConnection(connectionString))
-            {
-                string sql = "SELECT COUNT(*) FROM inquilino WHERE dni = @dni ";
-                if (idExcluido.HasValue)
-                    sql += " AND id != @id";
-                using (var cmd = new MySqlCommand(sql, connection))
-                {
-                    connection.Open();
-                    cmd.Parameters.AddWithValue("@dni", dni);
-                    if (idExcluido.HasValue)
-                        cmd.Parameters.AddWithValue("@id", idExcluido.Value);
-                    int count = Convert.ToInt32(cmd.ExecuteScalar());
-                    return count > 0;
-                }
-            }
+            await _context.inquilino.AddAsync(inquilino); 
+            await _context.SaveChangesAsync();
         }
-
-        public bool ExisteEmail(string email, int? idExcluido = null)
+        public async Task<bool> ExisteDni(string dni, int? idExcluido = null)
         {
-            using (MySqlConnection connection = new MySqlConnection(connectionString))
-            {
-                string sql = "SELECT COUNT(*) FROM inquilino WHERE email = @email ";
-                if (idExcluido.HasValue)
-                    sql += " AND id != @id";
-                using (var cmd = new MySqlCommand(sql, connection))
-                {
-                    connection.Open();
-                    cmd.Parameters.AddWithValue("@email", email);
-                    if (idExcluido.HasValue)
-                        cmd.Parameters.AddWithValue("@id", idExcluido.Value);
-                    int count = Convert.ToInt32(cmd.ExecuteScalar());
-                    return count > 0;
-                }
-            }
+            var query = _context.inquilino.Where(i => i.dni == dni);
+            if (idExcluido.HasValue)
+                query = query.Where(i => i.id != idExcluido.Value);
+
+            var count = await query.CountAsync();
+            return count > 0;
+        }
+        public async Task<bool> ExisteEmail(string email, int? idExcluido = null)
+        {
+            var query = _context.inquilino.Where(i => i.email == email);
+            if (idExcluido.HasValue)
+                query = query.Where(i => i.id != idExcluido.Value);
+
+            var count = await query.CountAsync();
+            return count > 0;
         }
     }
 }

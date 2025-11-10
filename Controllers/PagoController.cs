@@ -12,34 +12,32 @@ namespace _net_integrador.Controllers.Api
     public class PagosController : ControllerBase
     {
         private readonly IRepositorioPago _pagoRepo;
-        private readonly IRepositorioAuditoria _auditoriaRepo;
 
-        public PagosController(IRepositorioPago pagoRepo, IRepositorioAuditoria auditoriaRepo)
+        public PagosController(IRepositorioPago pagoRepo)
         {
             _pagoRepo = pagoRepo;
-            _auditoriaRepo = auditoriaRepo;
         }
 
         // GET api/Pagos/contrato/5
         [HttpGet("contrato/{contratoId:int}")]
-        public ActionResult<List<Pago>> GetPorContrato(int contratoId)
+        public async Task<ActionResult<List<Pago>>> GetPorContrato(int contratoId)
         {
-            var listaPagos = _pagoRepo.ObtenerPagosPorContrato(contratoId)
-                .Where(p => p.fecha_pago != null) 
-                .ToList();
+            var pid = User.GetUserIdOrThrow();
+            var listaPagos = await _pagoRepo.ObtenerPagosPorContrato(contratoId);
 
-            if (listaPagos == null || listaPagos.Count == 0)
+            var pagosConFecha = listaPagos.Where(p => p.fecha_pago != null).ToList();
+
+            if (pagosConFecha == null || pagosConFecha.Count == 0)
                 return NotFound(new { message = "No se encontraron pagos para este contrato." });
 
-            return Ok(listaPagos);
+            return Ok(pagosConFecha);
         }
-
 
         // PUT api/Pagos/recibir/5
         [HttpPut("recibir/{id:int}")]
-        public ActionResult Recibir(int id)
+        public async Task<ActionResult> Recibir(int id)
         {
-            var pago = _pagoRepo.ObtenerPagoId(id);
+            var pago = await _pagoRepo.ObtenerPagoId(id);
             if (pago == null)
                 return NotFound(new { message = "Pago no encontrado." });
 
@@ -48,34 +46,9 @@ namespace _net_integrador.Controllers.Api
 
             pago.estado = EstadoPago.recibido;
             pago.fecha_pago = DateTime.Now;
-            _pagoRepo.ActualizarPago(pago);
+            await _pagoRepo.ActualizarPago(pago);
 
             return Ok(new { message = "Pago recibido con éxito.", pago });
-        }
-
-        // PUT api/Pagos/anular/5
-        [HttpPut("anular/{id:int}")]
-        public ActionResult Anular(int id)
-        {
-            var pago = _pagoRepo.ObtenerPagoId(id);
-            if (pago == null)
-                return NotFound(new { message = "Pago no encontrado." });
-
-            if (pago.estado == EstadoPago.anulado)
-                return BadRequest(new { message = "El pago ya fue anulado anteriormente." });
-
-            pago.estado = EstadoPago.anulado;
-            pago.fecha_pago = DateTime.Now;
-            _pagoRepo.ActualizarPago(pago);
-
-            _auditoriaRepo.InsertarRegistroAuditoria(
-                TipoAuditoria.Pago,
-                pago.id,
-                AccionAuditoria.Anular,
-                User.Identity?.Name ?? "Anónimo"
-            );
-
-            return Ok(new { message = "Pago anulado con éxito.", pago });
         }
     }
 }
