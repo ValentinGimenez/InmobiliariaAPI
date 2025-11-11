@@ -26,7 +26,7 @@ namespace _net_integrador.Repositorios
         }
         public async Task AgregarPago(Pago pago)
         {
-            await _context.pago.AddAsync(pago); 
+            await _context.pago.AddAsync(pago);
             await _context.SaveChangesAsync();
         }
         public async Task AnularPago(int id)
@@ -34,7 +34,7 @@ namespace _net_integrador.Repositorios
             var pago = await _context.pago.FirstOrDefaultAsync(p => p.id == id);
             if (pago != null)
             {
-                pago.estado = EstadoPago.anulado;
+                pago.estado = 2;
                 await _context.SaveChangesAsync();
             }
         }
@@ -46,7 +46,7 @@ namespace _net_integrador.Repositorios
         public async Task<DateTime?> ObtenerFechaUltimoPagoRealizado(int contratoId)
         {
             var fechaUltimoPago = await _context.pago
-                .Where(p => p.id_contrato == contratoId && p.estado == EstadoPago.recibido && p.fecha_pago.HasValue)
+                .Where(p => p.id_contrato == contratoId && p.estado == 0 && p.fecha_pago.HasValue)
                 .OrderByDescending(p => p.fecha_pago)
                 .Select(p => p.fecha_pago)
                 .FirstOrDefaultAsync();
@@ -55,7 +55,15 @@ namespace _net_integrador.Repositorios
         public async Task<int> ContarPagosRealizados(int idContrato)
         {
             return await _context.pago
-                .CountAsync(p => p.id_contrato == idContrato && p.estado == EstadoPago.recibido);
+                .CountAsync(p => p.id_contrato == idContrato && p.estado == 0);
         }
+        public async Task<Pago?> ObtenerPagoIdConContrato(int id)
+        {
+            return await _context.pago
+                .Include(p => p.Contrato)
+                    .ThenInclude(c => c.Inmueble)
+                .FirstOrDefaultAsync(p => p.id == id);
+        }
+
     }
 }

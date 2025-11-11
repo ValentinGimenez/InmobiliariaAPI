@@ -13,5 +13,7 @@ namespace _net_integrador.Repositorios
         Task ActualizarPago(Pago pago);  
         Task<DateTime?> ObtenerFechaUltimoPagoRealizado(int contratoId);
         Task<int> ContarPagosRealizados(int contratoId);
+        Task<Pago?> ObtenerPagoIdConContrato(int id);
+        
     }
 }

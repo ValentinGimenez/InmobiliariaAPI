@@ -29,8 +29,7 @@ namespace _net_integrador.Repositorios
         }
         public async Task<Inmueble> ObtenerInmuebleId(int id)
         {
-            return await _context.inmueble
-                                 .FirstOrDefaultAsync(i => i.id == id);
+            return await _context.inmueble.FirstOrDefaultAsync(i => i.id == id);
         }
         public async Task<Inmueble> AgregarInmueble(Inmueble i)
         {

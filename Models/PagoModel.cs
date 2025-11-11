@@ -14,7 +14,7 @@ namespace _net_integrador.Models
         [Display(Name = "Contrato")]
         public int id_contrato { get; set; }
 
-        public virtual Contrato Contrato { get; set; }
+        public Contrato? Contrato { get; set; }
 
         [Display(Name = "Nro. Pago")]
         public int nro_pago { get; set; }
@@ -23,16 +23,10 @@ namespace _net_integrador.Models
         public DateTime? fecha_pago { get; set; }
 
         [Display(Name = "Estado")]
-        public EstadoPago estado { get; set; }
+        public int estado { get; set; }
 
         [Display(Name = "Concepto")]
         [StringLength(255)] 
         public string concepto { get; set; } = string.Empty;
-    }
-    public enum EstadoPago
-    {
-        pendiente = 0,
-        recibido = 1,
-        anulado = 2
     }
 }

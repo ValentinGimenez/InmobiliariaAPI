@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using _net_integrador.Models;
 using _net_integrador.Repositorios;
 using _net_integrador.Utils;
@@ -24,7 +25,7 @@ namespace _net_integrador.Controllers.Api
             IRepositorioPago pagoRepo,
             IRepositorioInquilino inquilinoRepo,
             IRepositorioInmueble inmuebleRepo
-             )
+        )
         {
             _logger = logger;
             _contratoRepo = contratoRepo;
@@ -37,12 +38,19 @@ namespace _net_integrador.Controllers.Api
         [HttpGet("{id:int}")]
         public async Task<ActionResult<Contrato>> GetById(int id)
         {
-            var contrato = await _contratoRepo.ObtenerContratoId(id);
-            if (contrato == null) return NotFound(new { message = "Contrato no encontrado." });
+            var pid = User.GetUserIdOrThrow();
+
+            var contrato = await _contratoRepo.ObtenerContratoConInmueble(id);
+            if (contrato == null)
+                return NotFound(new { message = "Contrato no encontrado." });
+
+            if (contrato.Inmueble?.id_propietario != pid)
+                return StatusCode(403, new { message = "No tiene permiso para ver este contrato." });
+
             return Ok(contrato);
         }
 
-        // GET api/Contratos/vigentes/mios
+        // GET api/Contratos
         [HttpGet]
         public async Task<ActionResult<List<Contrato>>> GetVigentesDelPropietario()
         {
@@ -56,8 +64,11 @@ namespace _net_integrador.Controllers.Api
         public async Task<ActionResult<Contrato>> GetVigentePorInmueble(int idInmueble)
         {
             var pid = User.GetUserIdOrThrow();
+
             var c = await _contratoRepo.ObtenerVigentePorInmuebleYPropietario(idInmueble, pid);
-            if (c == null) return NotFound(new { message = "No hay contrato vigente para ese inmueble o no te pertenece." });
+            if (c == null)
+                return NotFound(new { message = "No hay contrato vigente para ese inmueble o no te pertenece." });
+
             return Ok(c);
         }
 
@@ -65,6 +76,8 @@ namespace _net_integrador.Controllers.Api
         [HttpPost]
         public async Task<ActionResult<Contrato>> Crear([FromBody] Contrato contrato)
         {
+            var pid = User.GetUserIdOrThrow();
+
             if (contrato == null)
                 return BadRequest(new { message = "Datos inválidos." });
 
@@ -77,20 +90,33 @@ namespace _net_integrador.Controllers.Api
             if (contrato.DuracionEnMeses > 0 && contrato.fecha_inicio.HasValue)
                 contrato.fecha_fin = contrato.fecha_inicio.Value.AddMonths(contrato.DuracionEnMeses);
 
-            if (contrato.id_inmueble == 0)
+            if (!contrato.id_inmueble.HasValue || contrato.id_inmueble.Value == 0)
                 return BadRequest(new { message = "Debe seleccionar un inmueble." });
 
             if (!contrato.monto_mensual.HasValue)
                 return BadRequest(new { message = "Debe ingresar un monto mensual." });
 
+            var inmueble = await _inmuebleRepo.ObtenerInmuebleId(contrato.id_inmueble.Value);
+            if (inmueble == null)
+                return NotFound(new { message = "Inmueble no encontrado." });
+
+            if (inmueble.id_propietario != pid)
+                return StatusCode(403, new { message = "No tiene permiso para crear contratos sobre este inmueble." });
+
+            var existentes = await _contratoRepo.ObtenerContratoPorInmueble(contrato.id_inmueble.Value);
+            if (contrato.fecha_inicio.HasValue && contrato.fecha_fin.HasValue)
+            {
+                bool haySolape = existentes.Any(c =>
+                    contrato.fecha_inicio <= c.fecha_fin && contrato.fecha_fin >= c.fecha_inicio);
+                if (haySolape)
+                    return Conflict(new { message = "Las fechas se solapan con otro contrato del mismo inmueble." });
+            }
+
             contrato.estado = 1;
 
             var id = await _contratoRepo.AgregarContrato(contrato);
 
-            if (contrato.id_inmueble.HasValue && contrato.id_inmueble.Value > 0)
-            {
-                await _inmuebleRepo.MarcarComoAlquilado(contrato.id_inmueble.Value);
-            }
+            await _inmuebleRepo.MarcarComoAlquilado(contrato.id_inmueble.Value);
 
             contrato.id = id;
             return CreatedAtAction(nameof(GetById), new { id }, contrato);
@@ -100,8 +126,17 @@ namespace _net_integrador.Controllers.Api
         [HttpPut("{id:int}")]
         public async Task<ActionResult<Contrato>> Editar(int id, [FromBody] Contrato contratoEditado)
         {
+            var pid = User.GetUserIdOrThrow();
+
             if (contratoEditado == null || id != contratoEditado.id)
                 return BadRequest(new { message = "Datos inválidos." });
+
+            var actual = await _contratoRepo.ObtenerContratoConInmueble(id);
+            if (actual == null)
+                return NotFound(new { message = "Contrato no encontrado." });
+
+            if (actual.Inmueble?.id_propietario != pid)
+                return StatusCode(403, new { message = "No tiene permiso para editar este contrato." });
 
             if (contratoEditado.DuracionEnMeses <= 0 && !contratoEditado.fecha_inicio.HasValue)
                 return BadRequest(new { message = "Fecha de inicio requerida." });
@@ -109,13 +144,26 @@ namespace _net_integrador.Controllers.Api
             if (contratoEditado.DuracionEnMeses > 0 && contratoEditado.fecha_inicio.HasValue)
                 contratoEditado.fecha_fin = contratoEditado.fecha_inicio.Value.AddMonths(contratoEditado.DuracionEnMeses);
 
+            if (contratoEditado.id_inmueble.HasValue && contratoEditado.id_inmueble.Value != actual.id_inmueble)
+            {
+                var nuevoInmueble = await _inmuebleRepo.ObtenerInmuebleId(contratoEditado.id_inmueble.Value);
+                if (nuevoInmueble == null)
+                    return NotFound(new { message = "Inmueble destino no encontrado." });
+
+                if (nuevoInmueble.id_propietario != pid)
+                    return StatusCode(403, new { message = "No tiene permiso para usar ese inmueble." });
+            }
+
             if (contratoEditado.id_inmueble.HasValue)
             {
-                var existentes = await _contratoRepo.ObtenerContratoPorInmueble(contratoEditado.id_inmueble.Value, contratoEditado.id);  
-                bool haySolape = existentes.Any(c =>
-                    contratoEditado.fecha_inicio <= c.fecha_fin && contratoEditado.fecha_fin >= c.fecha_inicio);
-                if (haySolape)
-                    return Conflict(new { message = "Las fechas se solapan con otro contrato del mismo inmueble." });
+                var existentes = await _contratoRepo.ObtenerContratoPorInmueble(contratoEditado.id_inmueble.Value, contratoEditado.id);
+                if (contratoEditado.fecha_inicio.HasValue && contratoEditado.fecha_fin.HasValue)
+                {
+                    bool haySolape = existentes.Any(c =>
+                        contratoEditado.fecha_inicio <= c.fecha_fin && contratoEditado.fecha_fin >= c.fecha_inicio);
+                    if (haySolape)
+                        return Conflict(new { message = "Las fechas se solapan con otro contrato del mismo inmueble." });
+                }
             }
 
             await _contratoRepo.ActualizarContrato(contratoEditado);
@@ -126,8 +174,14 @@ namespace _net_integrador.Controllers.Api
         [HttpPost("{id:int}/cancelar")]
         public async Task<ActionResult> Cancelar(int id, [FromBody] DateTime fechaTerminacion)
         {
-            var contrato = await _contratoRepo.ObtenerContratoId(id);
-            if (contrato == null) return NotFound(new { message = "Contrato no encontrado." });
+            var pid = User.GetUserIdOrThrow();
+
+            var contrato = await _contratoRepo.ObtenerContratoConInmueble(id);
+            if (contrato == null)
+                return NotFound(new { message = "Contrato no encontrado." });
+
+            if (contrato.Inmueble?.id_propietario != pid)
+                return StatusCode(403, new { message = "No tiene permiso para cancelar este contrato." });
 
             if (!contrato.fecha_inicio.HasValue || !contrato.fecha_fin.HasValue)
                 return BadRequest(new { message = "El contrato no tiene fechas de inicio/fin válidas." });
@@ -151,16 +205,12 @@ namespace _net_integrador.Controllers.Api
                 id_contrato = contrato.id,
                 nro_pago = 999,
                 fecha_pago = null,
-                estado = EstadoPago.pendiente,
+                estado = 0,
                 concepto = "Multa por rescisión anticipada"
             };
             await _pagoRepo.AgregarPago(nuevoPago);
 
-            return Ok(new
-            {
-                success = true,
-                multaValor = multa
-            });
+            return Ok(new { success = true, multaValor = multa });
         }
 
         private decimal CalcularMulta(Contrato contrato, DateTime fechaTerminacion)
